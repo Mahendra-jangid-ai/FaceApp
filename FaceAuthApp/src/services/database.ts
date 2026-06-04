@@ -7,7 +7,10 @@ const ATTENDANCE_KEY = '@faceauth_attendance';
 
 export async function getEnrolledUsers(): Promise<EnrolledUser[]> {
   const data = await AsyncStorage.getItem(USERS_KEY);
-  return data ? JSON.parse(data) : [];
+  if (!data) return [];
+  const users = JSON.parse(data);
+  // Backward compat: add role field if missing
+  return users.map((u: any) => ({ role: 'worker', ...u }));
 }
 
 export async function saveUser(user: EnrolledUser): Promise<void> {

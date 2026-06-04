@@ -93,6 +93,28 @@ export default function HistoryScreen() {
             {item.synced ? 'Synced' : 'Pending'}
           </Text>
         </View>
+        <View style={styles.logDetails}>
+          {item.bioHashVerified !== undefined && (
+            <Text style={[styles.logDetail, { color: item.bioHashVerified ? colors.secondary : colors.textLight }]}>
+              BioHash: {item.bioHashVerified ? 'OK' : 'N/A'}
+            </Text>
+          )}
+          {item.ppeCompliant !== undefined && (
+            <Text style={[styles.logDetail, { color: item.ppeCompliant ? colors.success : colors.warning }]}>
+              PPE: {item.ppeCompliant ? 'OK' : 'Fail'}
+            </Text>
+          )}
+          {item.qualityScore !== undefined && item.qualityScore > 0 && (
+            <Text style={styles.logDetail}>
+              Q: {(item.qualityScore * 100).toFixed(0)}%
+            </Text>
+          )}
+          {item.pipelineLatencyMs !== undefined && item.pipelineLatencyMs > 0 && (
+            <Text style={[styles.logDetail, { fontFamily: 'monospace' }]}>
+              {item.pipelineLatencyMs}ms
+            </Text>
+          )}
+        </View>
       </View>
     </View>
   );

@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { getEnrolledUsers, getAuthLogs, getAttendanceRecords } from '../services/database';
 import { getWorkSites } from '../services/geofencing';
+import { getAdaptiveStats } from '../services/adaptiveThreshold';
 import type { AuthLog } from '../types';
 
 interface DayStats {
@@ -24,6 +25,10 @@ export default function DashboardScreen() {
   const [weekData, setWeekData] = useState<DayStats[]>([]);
   const [topUsers, setTopUsers] = useState<{ name: string; count: number }[]>([]);
   const [livenessPassRate, setLivenessPassRate] = useState(0);
+  const [bioHashRate, setBioHashRate] = useState(0);
+  const [ppeRate, setPpeRate] = useState(0);
+  const [avgLatency, setAvgLatency] = useState(0);
+  const [adaptiveInfo, setAdaptiveInfo] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -76,6 +81,22 @@ export default function DashboardScreen() {
         ? livenessLogs.filter(l => l.livenessPassed).length / livenessLogs.length
         : 0,
     );
+
+    // BioHash verification rate
+    const bhLogs = logs.filter(l => l.bioHashVerified !== undefined);
+    setBioHashRate(bhLogs.length > 0 ? bhLogs.filter(l => l.bioHashVerified).length / bhLogs.length : 0);
+
+    // PPE compliance rate
+    const ppeLogs = logs.filter(l => l.ppeCompliant !== undefined);
+    setPpeRate(ppeLogs.length > 0 ? ppeLogs.filter(l => l.ppeCompliant).length / ppeLogs.length : 0);
+
+    // Average pipeline latency
+    const latencyLogs = logs.filter(l => l.pipelineLatencyMs && l.pipelineLatencyMs > 0);
+    setAvgLatency(latencyLogs.length > 0 ? Math.round(latencyLogs.reduce((a, l) => a + (l.pipelineLatencyMs || 0), 0) / latencyLogs.length) : 0);
+
+    // Adaptive threshold info
+    const adaptive = await getAdaptiveStats();
+    setAdaptiveInfo(`${adaptive.threshold.toFixed(3)} (${adaptive.genuineSamples}g/${adaptive.impostorSamples}i)`);
 
     // Weekly data
     const days: DayStats[] = [];
@@ -189,6 +210,20 @@ export default function DashboardScreen() {
             </Text>
           </View>
           <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>BioHash Verify Rate</Text>
+            <View style={styles.metricBarBg}>
+              <View style={[styles.metricBarFill, { width: `${bioHashRate * 100}%`, backgroundColor: '#00BFA5' }]} />
+            </View>
+            <Text style={styles.metricValue}>{(bioHashRate * 100).toFixed(0)}%</Text>
+          </View>
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>PPE Compliance</Text>
+            <View style={styles.metricBarBg}>
+              <View style={[styles.metricBarFill, { width: `${ppeRate * 100}%`, backgroundColor: colors.warning }]} />
+            </View>
+            <Text style={styles.metricValue}>{(ppeRate * 100).toFixed(0)}%</Text>
+          </View>
+          <View style={styles.metricRow}>
             <Text style={styles.metricLabel}>Spoof Attempts Blocked</Text>
             <View style={{ flex: 1 }} />
             <Text
@@ -198,6 +233,16 @@ export default function DashboardScreen() {
               ]}>
               {spoofBlocked}
             </Text>
+          </View>
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Avg Pipeline Latency</Text>
+            <View style={{ flex: 1 }} />
+            <Text style={styles.metricValue}>{avgLatency}ms</Text>
+          </View>
+          <View style={styles.metricRow}>
+            <Text style={styles.metricLabel}>Adaptive Threshold</Text>
+            <View style={{ flex: 1 }} />
+            <Text style={[styles.metricValue, { fontSize: 11, width: 'auto' as any }]}>{adaptiveInfo}</Text>
           </View>
         </View>
       </View>
@@ -273,7 +318,19 @@ export default function DashboardScreen() {
           </View>
           <View style={[styles.infoRow, styles.infoRowBorder]}>
             <Text style={styles.infoLabel}>Encryption</Text>
-            <Text style={styles.infoValue}>AES-256 At Rest</Text>
+            <Text style={styles.infoValue}>AES-256 + Keystore</Text>
+          </View>
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <Text style={styles.infoLabel}>Biometric Protection</Text>
+            <Text style={styles.infoValue}>BioHash ISO 24745</Text>
+          </View>
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <Text style={styles.infoLabel}>Privacy</Text>
+            <Text style={styles.infoValue}>Differential Privacy</Text>
+          </View>
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <Text style={styles.infoLabel}>PPE Detection</Text>
+            <Text style={styles.infoValue}>Helmet + Vest</Text>
           </View>
         </View>
       </View>

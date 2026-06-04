@@ -14,8 +14,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { detectFace, getFaceEmbedding } from '../services/faceProcessor';
 import { findBestMatch } from '../services/embeddingUtils';
+import { checkFaceQuality, getQualityFeedback } from '../services/qualityGate';
 import { getEnrolledUsers, saveAuthLog, getOpenCheckIn, saveAttendance, updateAttendance } from '../services/database';
 import { checkGeofence, type GeofenceCheck } from '../services/geofencing';
+import { detectPPE, getPPEConfig } from '../services/ppeDetection';
+import { getAdaptiveMatchThreshold } from '../services/adaptiveThreshold';
+import { speak } from '../services/voicePrompts';
 import type { RootStackParamList, FaceDetectionResult } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Authenticate'>;
@@ -25,14 +29,15 @@ type ChallengeType = 'blink' | 'smile' | 'turnLeft' | 'turnRight';
 interface Challenge {
   type: ChallengeType;
   instruction: string;
+  voiceKey: string;
   icon: string;
 }
 
 const ALL_CHALLENGES: Challenge[] = [
-  { type: 'blink', instruction: 'Blink your eyes', icon: '👁️' },
-  { type: 'smile', instruction: 'Smile', icon: '😊' },
-  { type: 'turnLeft', instruction: 'Turn head left', icon: '↩️' },
-  { type: 'turnRight', instruction: 'Turn head right', icon: '↪️' },
+  { type: 'blink', instruction: 'Blink your eyes', voiceKey: 'blink', icon: '0' },
+  { type: 'smile', instruction: 'Smile', voiceKey: 'smile', icon: ':)' },
+  { type: 'turnLeft', instruction: 'Turn head left', voiceKey: 'turn_left', icon: '<' },
+  { type: 'turnRight', instruction: 'Turn head right', voiceKey: 'turn_right', icon: '>' },
 ];
 
 function pickChallenges(): Challenge[] {
@@ -40,15 +45,7 @@ function pickChallenges(): Challenge[] {
   return shuffled.slice(0, 3);
 }
 
-/**
- * Smart challenge checker that uses STATE TRANSITIONS instead of single-frame thresholds.
- * This makes detection much more natural:
- * - Blink: tracks eyes-open → eyes-closed transition (catches fast natural blinks)
- * - Smile: checks if smile probability crosses threshold
- * - Head turn: checks if head angle crosses threshold
- */
 function createChallengeChecker() {
-  // Track previous frame state for transition-based detection
   let prevEyesOpen = true;
   let blinkDetected = false;
 
@@ -61,18 +58,12 @@ function createChallengeChecker() {
     check(type: ChallengeType, face: FaceDetectionResult): boolean {
       switch (type) {
         case 'blink': {
-          // State-machine blink detection:
-          // Frame N: eyes open (prob > 0.5) → Frame N+1: eyes closed (prob < 0.45)
           const leftOpen = face.leftEyeOpenProbability;
           const rightOpen = face.rightEyeOpenProbability;
-          if (leftOpen < 0 || rightOpen < 0) return false; // ML Kit didn't detect eyes
-
+          if (leftOpen < 0 || rightOpen < 0) return false;
           const eyesCurrentlyOpen = leftOpen > 0.5 && rightOpen > 0.5;
           const eyesCurrentlyClosed = leftOpen < 0.45 && rightOpen < 0.45;
-
-          if (prevEyesOpen && eyesCurrentlyClosed) {
-            blinkDetected = true;
-          }
+          if (prevEyesOpen && eyesCurrentlyClosed) blinkDetected = true;
           prevEyesOpen = eyesCurrentlyOpen;
           return blinkDetected;
         }
@@ -91,14 +82,14 @@ function createChallengeChecker() {
       switch (type) {
         case 'blink': {
           const avg = ((face.leftEyeOpenProbability + face.rightEyeOpenProbability) / 2 * 100).toFixed(0);
-          return `Eyes: ${avg}% open ${blinkDetected ? '— BLINK DETECTED!' : '— blink now'}`;
+          return `Eyes: ${avg}% open ${blinkDetected ? '— DETECTED!' : '— blink now'}`;
         }
         case 'smile':
           return `Smile: ${(face.smilingProbability * 100).toFixed(0)}% ${face.smilingProbability > 0.5 ? '— GOT IT!' : '(need 50%+)'}`;
         case 'turnLeft':
-          return `Head angle: ${face.headEulerAngleY.toFixed(1)}° ${face.headEulerAngleY > 12 ? '— GOT IT!' : '(turn more left)'}`;
+          return `Angle: ${face.headEulerAngleY.toFixed(1)}° ${face.headEulerAngleY > 12 ? '— GOT IT!' : '(turn more)'}`;
         case 'turnRight':
-          return `Head angle: ${face.headEulerAngleY.toFixed(1)}° ${face.headEulerAngleY < -12 ? '— GOT IT!' : '(turn more right)'}`;
+          return `Angle: ${face.headEulerAngleY.toFixed(1)}° ${face.headEulerAngleY < -12 ? '— GOT IT!' : '(turn more)'}`;
         default:
           return '';
       }
@@ -123,6 +114,9 @@ export default function AuthScreen({ navigation }: Props) {
   const [passedFlash, setPassedFlash] = useState(false);
   const [geoInfo, setGeoInfo] = useState('');
   const [attendanceAction, setAttendanceAction] = useState('');
+  const [bioHashOk, setBioHashOk] = useState(false);
+  const [ppeOk, setPpeOk] = useState(true);
+  const [pipelineMs, setPipelineMs] = useState(0);
 
   const challengeIndexRef = useRef(0);
   const runningRef = useRef(false);
@@ -179,7 +173,7 @@ export default function AuthScreen({ navigation }: Props) {
       if (!runningRef.current) return;
 
       if (!face || !face.found) {
-        setDebugInfo('No face detected — look at camera');
+        setDebugInfo('No face — look at camera');
         scheduleNextCheck();
         return;
       }
@@ -209,6 +203,7 @@ export default function AuthScreen({ navigation }: Props) {
         } else {
           checkerRef.current.reset();
           setStatusText(challenges[nextIdx].instruction);
+          speak(challenges[nextIdx].voiceKey);
         }
       }
     } catch (e: any) {
@@ -229,12 +224,14 @@ export default function AuthScreen({ navigation }: Props) {
     setDebugInfo('Look at the camera...');
     setPassedFlash(false);
     runningRef.current = true;
+    speak(challenges[0].voiceKey);
     scheduleNextCheck();
   }, [challenges, scheduleNextCheck]);
 
   const logAndFail = useCallback(async (livenessPassed: boolean, score: number) => {
     setStep('failure');
     Vibration.vibrate(300);
+    speak('failure');
     await saveAuthLog({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
       userId: null, userName: null,
@@ -245,6 +242,7 @@ export default function AuthScreen({ navigation }: Props) {
   }, []);
 
   const handleRecognition = useCallback(async () => {
+    const pipelineStart = Date.now();
     setStep('recognizing');
     setStatusText('Checking location...');
 
@@ -265,11 +263,14 @@ export default function AuthScreen({ navigation }: Props) {
       const photo = await cameraRef.current.takePhoto({ flash: 'off' });
       const filePath = photo.path.startsWith('/') ? photo.path : `/${photo.path}`;
 
-      // Anti-spoof check via face detection
-      const spoofCheck = await detectFace(filePath);
-      const spoofScore = spoofCheck.spoofScore ?? 0.5;
+      // Quality gate
+      const faceResult = await detectFace(filePath);
+      const quality = checkFaceQuality(faceResult);
+
+      const spoofScore = faceResult.spoofScore ?? 0.5;
       if (spoofScore < 0.3) {
-        Alert.alert('Spoof Detected', 'The system detected a potential spoof attempt (printed photo or screen). Please try again with your real face.');
+        Alert.alert('Spoof Detected', 'The system detected a potential spoof attempt. Please try with your real face.');
+        speak('spoof_detected');
         await logAndFail(true, 0);
         return;
       }
@@ -292,16 +293,39 @@ export default function AuthScreen({ navigation }: Props) {
         return;
       }
 
+      // Adaptive threshold
+      const threshold = await getAdaptiveMatchThreshold();
+
       const match = findBestMatch(
         emb,
-        users.map(u => ({ id: u.id, name: u.name, embedding: u.embedding })),
+        users.map(u => ({ id: u.id, name: u.name, embedding: u.embedding, bioHash: u.bioHash, bioHashSalt: u.bioHashSalt })),
+        threshold,
       );
+
+      // PPE check
+      setStatusText('Checking PPE compliance...');
+      const ppeConfig = await getPPEConfig();
+      let ppeCompliant = true;
+      if (ppeConfig.enabled) {
+        try {
+          const ppeResult = await detectPPE(filePath);
+          ppeCompliant = ppeResult.compliant;
+          setPpeOk(ppeCompliant);
+        } catch {
+          ppeCompliant = true;
+        }
+      }
+
+      const latency = Date.now() - pipelineStart;
+      setPipelineMs(latency);
 
       if (match) {
         setMatchName(match.name);
         setMatchScore(match.score);
+        setBioHashOk(match.bioHashVerified);
         setStep('success');
         Vibration.vibrate([0, 100, 100, 100]);
+        speak('success');
 
         await saveAuthLog({
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
@@ -314,9 +338,13 @@ export default function AuthScreen({ navigation }: Props) {
           siteId: geo.nearestSite?.id ?? null,
           siteName: geo.nearestSite?.name ?? null,
           withinGeofence: geo.withinGeofence,
+          bioHashVerified: match.bioHashVerified,
+          qualityScore: quality.score,
+          ppeCompliant,
+          pipelineLatencyMs: latency,
         });
 
-        // Auto-attendance: check-in or check-out
+        // Auto-attendance
         const matchedUser = users.find(u => u.id === match.id);
         if (matchedUser) {
           const openRecord = await getOpenCheckIn(match.id);
@@ -327,6 +355,7 @@ export default function AuthScreen({ navigation }: Props) {
               checkOutScore: match.score,
             });
             setAttendanceAction('Checked Out');
+            speak('checked_out');
           } else {
             await saveAttendance({
               id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
@@ -343,8 +372,10 @@ export default function AuthScreen({ navigation }: Props) {
               checkOutScore: null,
               withinGeofence: geo.withinGeofence,
               synced: false,
+              ppeCompliant,
             });
             setAttendanceAction('Checked In');
+            speak('checked_in');
           }
         }
       } else {
@@ -381,7 +412,7 @@ export default function AuthScreen({ navigation }: Props) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.successLight }]}>
         <View style={[styles.resultCircle, { backgroundColor: colors.success }]}>
-          <Text style={styles.resultIcon}>{'✓'}</Text>
+          <Text style={styles.resultIcon}>{'V'}</Text>
         </View>
         <Text style={[styles.resultTitle, { color: colors.success }]}>Authenticated</Text>
         <Text style={styles.resultName}>{matchName}</Text>
@@ -396,6 +427,18 @@ export default function AuthScreen({ navigation }: Props) {
             <Text style={styles.resultBadgeText}>Anti-Spoof Passed</Text>
           </View>
         </View>
+        <View style={styles.badgeRow}>
+          {bioHashOk && (
+            <View style={[styles.resultBadge, { backgroundColor: colors.secondaryLight }]}>
+              <Text style={[styles.resultBadgeText, { color: colors.secondary }]}>BioHash Verified</Text>
+            </View>
+          )}
+          {ppeOk && (
+            <View style={[styles.resultBadge, { backgroundColor: colors.warningLight }]}>
+              <Text style={[styles.resultBadgeText, { color: colors.warning }]}>PPE Compliant</Text>
+            </View>
+          )}
+        </View>
         {attendanceAction !== '' && (
           <View style={[styles.resultBadge, { backgroundColor: colors.primaryLight, marginTop: spacing.sm }]}>
             <Text style={[styles.resultBadgeText, { color: colors.primary }]}>
@@ -404,10 +447,9 @@ export default function AuthScreen({ navigation }: Props) {
           </View>
         )}
         {geoInfo !== '' && (
-          <Text style={[styles.resultScore, { marginTop: spacing.xs }]}>
-            {geoInfo}
-          </Text>
+          <Text style={[styles.resultScore, { marginTop: spacing.xs }]}>{geoInfo}</Text>
         )}
+        <Text style={styles.latencyText}>Pipeline: {pipelineMs}ms</Text>
         <TouchableOpacity
           style={[styles.button, { marginTop: spacing.xl }]}
           onPress={() => navigation.goBack()}>
@@ -421,7 +463,7 @@ export default function AuthScreen({ navigation }: Props) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.errorLight }]}>
         <View style={[styles.resultCircle, { backgroundColor: colors.error }]}>
-          <Text style={styles.resultIcon}>{'✗'}</Text>
+          <Text style={styles.resultIcon}>{'X'}</Text>
         </View>
         <Text style={[styles.resultTitle, { color: colors.error }]}>Not Recognized</Text>
         <Text style={styles.resultSubtitle}>Face did not match any enrolled user</Text>
@@ -454,14 +496,10 @@ export default function AuthScreen({ navigation }: Props) {
           style={StyleSheet.absoluteFill}
           device={device}
           isActive={step === 'ready' || step === 'liveness' || step === 'recognizing'}
-          // @ts-ignore
           photo={true}
         />
 
-        {/* Green flash when challenge passes */}
-        {passedFlash && (
-          <View style={styles.flashOverlay} />
-        )}
+        {passedFlash && <View style={styles.flashOverlay} />}
 
         {step === 'liveness' && (
           <View style={styles.livenessOverlay}>
@@ -563,7 +601,7 @@ const styles = StyleSheet.create({
   challengeHeader: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
   },
-  challengeIcon: { fontSize: 30 },
+  challengeIcon: { fontSize: 24, color: colors.white, fontWeight: '700' },
   challengeStep: { color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: '600' },
   challengeText: {
     color: colors.white, fontSize: 20, fontWeight: '700',
@@ -593,7 +631,7 @@ const styles = StyleSheet.create({
     width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primaryLight,
     color: colors.primary, fontSize: 13, fontWeight: '700', textAlign: 'center', lineHeight: 24,
   },
-  previewIcon: { fontSize: 20 },
+  previewIcon: { fontSize: 18, fontWeight: '700', color: colors.text },
   previewText: { ...typography.body, flex: 1 },
   startButton: {
     backgroundColor: colors.primary, paddingVertical: spacing.md,
@@ -603,17 +641,18 @@ const styles = StyleSheet.create({
   resultCircle: {
     width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center',
   },
-  resultIcon: { fontSize: 48, color: colors.white },
+  resultIcon: { fontSize: 48, color: colors.white, fontWeight: '700' },
   resultTitle: { fontSize: 28, fontWeight: '700', marginTop: spacing.lg },
   resultName: { ...typography.h2, marginTop: spacing.sm },
   resultSubtitle: { ...typography.bodySmall, marginTop: spacing.sm, textAlign: 'center' },
-  badgeRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  badgeRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   resultScore: { ...typography.bodySmall, marginTop: spacing.xs },
+  latencyText: { ...typography.caption, marginTop: spacing.xs, fontFamily: 'monospace' },
   resultBadge: {
     backgroundColor: colors.successLight, paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm, borderRadius: borderRadius.full, marginTop: spacing.md,
+    paddingVertical: spacing.sm, borderRadius: borderRadius.full,
   },
-  resultBadgeText: { color: colors.success, fontWeight: '600', fontSize: 14 },
+  resultBadgeText: { color: colors.success, fontWeight: '600', fontSize: 13 },
   button: {
     backgroundColor: colors.primary, paddingVertical: spacing.md,
     paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, ...shadows.md,
