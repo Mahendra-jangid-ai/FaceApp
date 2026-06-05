@@ -23,22 +23,35 @@ export function l2Normalize(embedding: number[]): number[] {
   return embedding.map(v => v / norm);
 }
 
-// Calibrated for the eye-aligned landmark geometry embedding.
-// Same person across captures scores very high (~0.93+); the threshold
-// admits pose/expression variation while still separating distinct people.
-export const MATCH_THRESHOLD = 0.80;
-export const DUPLICATE_THRESHOLD = 0.88;
+export type EmbeddingMethod = 'onnx' | 'landmark';
+
+// Thresholds are method-specific because the two embedding spaces behave
+// very differently:
+//  • onnx     — custom MobileFaceNet/ArcFace: discriminative, low cosine
+//               separates identities (same ~0.5-0.8, different <0.3).
+//  • landmark — geometric fallback: structurally similar across people,
+//               so it needs a high threshold and is less discriminative.
+export const THRESHOLDS: Record<EmbeddingMethod, { match: number; dup: number }> = {
+  onnx: { match: 0.42, dup: 0.55 },
+  landmark: { match: 0.80, dup: 0.88 },
+};
+
+// Defaults (used for UI display) reflect the primary CNN path.
+export const MATCH_THRESHOLD = THRESHOLDS.onnx.match;
+export const DUPLICATE_THRESHOLD = THRESHOLDS.onnx.dup;
 
 export function checkDuplicateEnrollment(
   newEmbedding: number[],
   existingEmbeddings: { id: string; name: string; embedding: number[] }[],
+  method: EmbeddingMethod = 'onnx',
 ): { id: string; name: string; score: number } | null {
   const normalized = l2Normalize(newEmbedding);
+  const dupThreshold = THRESHOLDS[method].dup;
 
   for (const enrolled of existingEmbeddings) {
     const enrolledNorm = l2Normalize(enrolled.embedding);
     const score = cosineSimilarity(normalized, enrolledNorm);
-    if (score >= DUPLICATE_THRESHOLD) {
+    if (score >= dupThreshold) {
       return { id: enrolled.id, name: enrolled.name, score };
     }
   }
@@ -55,8 +68,9 @@ export interface MatchResult {
 export function findBestMatch(
   queryEmbedding: number[],
   enrolledEmbeddings: { id: string; name: string; embedding: number[]; bioHash?: string; bioHashSalt?: string }[],
-  threshold: number = MATCH_THRESHOLD,
+  method: EmbeddingMethod = 'onnx',
 ): MatchResult | null {
+  const threshold = THRESHOLDS[method].match;
   const normalized = l2Normalize(queryEmbedding);
   let bestScore = -1;
   let bestMatch: MatchResult | null = null;

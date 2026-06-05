@@ -13,7 +13,7 @@ import {
 import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
-import { detectFace, getFaceEmbedding } from '../services/faceProcessor';
+import { detectFace, getFaceEmbeddingWithMethod } from '../services/faceProcessor';
 import { findBestMatch, MATCH_THRESHOLD } from '../services/embeddingUtils';
 import { getEnrolledUsers, saveAuthLog, getOpenCheckIn, saveAttendance, updateAttendance } from '../services/database';
 import { checkGeofence, type GeofenceCheck } from '../services/geofencing';
@@ -287,11 +287,12 @@ export default function AuthScreen({ navigation }: Props) {
 
       setStatusText('Matching identity…');
       let emb: number[];
-      try { emb = await getFaceEmbedding(filePath); } catch { await handleFail(); return; }
+      let method: 'onnx' | 'landmark' = 'onnx';
+      try { const r = await getFaceEmbeddingWithMethod(filePath); emb = r.embedding; method = r.method; } catch { await handleFail(); return; }
       const users = await getEnrolledUsers();
       if (users.length === 0) { Alert.alert('No Users', 'Enrol someone first.'); await handleFail(); return; }
 
-      const match = findBestMatch(emb, users.map(u => ({ id: u.id, name: u.name, embedding: u.embedding, bioHash: u.bioHash, bioHashSalt: u.bioHashSalt })));
+      const match = findBestMatch(emb, users.map(u => ({ id: u.id, name: u.name, embedding: u.embedding, bioHash: u.bioHash, bioHashSalt: u.bioHashSalt })), method);
       setPipelineMs(Date.now() - t0);
 
       if (match) {

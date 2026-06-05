@@ -31,7 +31,7 @@ import {
   saveAttendance,
   updateAttendance,
 } from './database';
-import { getFaceEmbedding, detectFace } from './faceProcessor';
+import { getFaceEmbeddingWithMethod, detectFace } from './faceProcessor';
 import { findBestMatch, prepareEmbeddingForStorage } from './embeddingUtils';
 import { syncToServer, syncAndPurge } from './syncService';
 import { checkGeofence, getWorkSites } from './geofencing';
@@ -97,14 +97,16 @@ export const FaceAuthModule = {
     }
 
     // Step 4: PPE compliance (parallel with embedding)
-    const [embedding, ppeResult] = await Promise.all([
-      getFaceEmbedding(imagePath).catch(() => null),
+    const [embRes, ppeResult] = await Promise.all([
+      getFaceEmbeddingWithMethod(imagePath).catch(() => null),
       ppeConfig.enabled ? detectPPE(imagePath) : Promise.resolve({ compliant: true, helmetDetected: true, vestDetected: true, helmetConfidence: 1, vestConfidence: 1, detectionTimeMs: 0 }),
     ]);
 
-    if (!embedding) {
+    if (!embRes) {
       return makeFailResult(timestamp, geo, spoofScore, pipelineStart, integrity.deviceRecognition);
     }
+    const embedding = embRes.embedding;
+    const embMethod = embRes.method;
 
     if (ppeConfig.blockOnFailure && !ppeResult.compliant) {
       speak('ppe_missing');
@@ -116,7 +118,7 @@ export const FaceAuthModule = {
     const match = findBestMatch(
       embedding,
       users.map(u => ({ id: u.id, name: u.name, embedding: u.embedding, bioHash: u.bioHash, bioHashSalt: u.bioHashSalt })),
-      adaptiveThreshold,
+      embMethod,
     );
 
     const matchedUser = match ? users.find(u => u.id === match.id) : null;

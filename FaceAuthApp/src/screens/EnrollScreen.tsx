@@ -77,9 +77,11 @@ export default function EnrollScreen({ navigation, route }: Props) {
 
       setFaceStatus('GENERATING EMBEDDING...');
       let emb: number[];
+      let method: 'onnx' | 'landmark' = 'onnx';
       try {
         const embResult = await getFaceEmbeddingWithMethod(filePath);
         emb = embResult.embedding;
+        method = embResult.method;
         setModelMethod(embResult.method);
       } catch (e: any) {
         Alert.alert('EMBEDDING ERROR', e?.message || 'Unknown');
@@ -90,7 +92,7 @@ export default function EnrollScreen({ navigation, route }: Props) {
 
       setFaceStatus('CHECKING DUPLICATES...');
       const existing = await getEnrolledUsers();
-      const dup = checkDuplicateEnrollment(emb, existing.map(u => ({ id: u.id, name: u.name, embedding: u.embedding })));
+      const dup = checkDuplicateEnrollment(emb, existing.map(u => ({ id: u.id, name: u.name, embedding: u.embedding })), method);
       if (dup) {
         Alert.alert('DUPLICATE', `Matches "${dup.name}" at ${(dup.score * 100).toFixed(1)}%`);
         setProcessing(false); setFaceStatus('DUPLICATE — TRY DIFFERENT PERSON'); return;
