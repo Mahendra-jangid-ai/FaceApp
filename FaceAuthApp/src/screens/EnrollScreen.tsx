@@ -1,26 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  NativeModules,
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Alert,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, NativeModules,
 } from 'react-native';
-import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
 import { detectFace, getFaceEmbedding } from '../services/faceProcessor';
 import { saveUser, getEnrolledUsers } from '../services/database';
-import { checkDuplicateEnrollment, prepareEmbeddingForStorage } from '../services/embeddingUtils';
+import { checkDuplicateEnrollment, prepareEmbeddingForStorage, MATCH_THRESHOLD, DUPLICATE_THRESHOLD } from '../services/embeddingUtils';
 import { checkFaceQuality, getQualityFeedback } from '../services/qualityGate';
 import { validateAadhar, maskAadhar } from '../services/aadharValidator';
-import { speak } from '../services/voicePrompts';
 import type { RootStackParamList, EnrolledUser } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Enroll'>;
@@ -29,9 +19,11 @@ type Step = 'camera' | 'details' | 'done';
 export default function EnrollScreen({ navigation, route }: Props) {
   const role = route.params?.role || 'worker';
   const [cameraPosition, setCameraPosition] = useState<'front' | 'back'>('front');
-  const device = useCameraDevice(cameraPosition);
+  const frontDevice = useCameraDevice('front');
+  const backDevice = useCameraDevice('back');
+  const device = cameraPosition === 'front' ? (frontDevice ?? backDevice) : (backDevice ?? frontDevice);
   const { hasPermission, requestPermission } = useCameraPermission();
-  const cameraRef = useRef<any>(null);
+  const photoOutput = usePhotoOutput({});
   const [step, setStep] = useState<Step>('camera');
   const [processing, setProcessing] = useState(false);
   const [photoPath, setPhotoPath] = useState('');
@@ -40,428 +32,256 @@ export default function EnrollScreen({ navigation, route }: Props) {
   const [bioHashSalt, setBioHashSalt] = useState('');
   const [name, setName] = useState('');
   const [employeeId, setEmployeeId] = useState('');
+  const [department, setDepartment] = useState('');
   const [aadhar, setAadhar] = useState('');
   const [aadharError, setAadharError] = useState('');
-  const [faceStatus, setFaceStatus] = useState('Position your face in the frame');
-  const [qualityInfo, setQualityInfo] = useState('');
+  const [faceStatus, setFaceStatus] = useState('POSITION FACE IN OVAL');
+  const [modelReady, setModelReady] = useState(false);
+  const [embeddingDims, setEmbeddingDims] = useState(0);
+  const [processTimeMs, setProcessTimeMs] = useState(0);
 
   useEffect(() => {
-    speak('position_face');
     if (!NativeModules.FaceProcessor) {
-      Alert.alert('Error', 'FaceProcessor native module not loaded. Reinstall app.');
+      Alert.alert('ERROR', 'FaceProcessor native module not loaded.');
+    } else {
+      setModelReady(true);
     }
-  }, []);
-
-  const flipCamera = useCallback(() => {
-    setCameraPosition(prev => (prev === 'front' ? 'back' : 'front'));
   }, []);
 
   const captureAndProcess = useCallback(async () => {
-    if (!cameraRef.current || processing) return;
+    if (!photoOutput || processing) return;
+    const t0 = Date.now();
     setProcessing(true);
-    setFaceStatus('Capturing photo...');
-
+    setFaceStatus('CAPTURING...');
     try {
-      const photo = await cameraRef.current.takePhoto({ flash: 'off' });
-      if (!photo?.path) {
-        Alert.alert('Error', 'Photo capture returned empty. Try again.');
-        setProcessing(false);
-        setFaceStatus('Capture failed. Try again.');
-        return;
-      }
+      const photoFile = await photoOutput.capturePhotoToFile({ flashMode: 'off' }, {});
+      if (!photoFile?.filePath) { setProcessing(false); setFaceStatus('CAPTURE FAILED'); return; }
+      const filePath = photoFile.filePath.startsWith('/') ? photoFile.filePath : `/${photoFile.filePath}`;
 
-      const filePath = photo.path.startsWith('/') ? photo.path : `/${photo.path}`;
-
-      setFaceStatus('Detecting face...');
+      setFaceStatus('DETECTING FACE...');
       const face = await detectFace(filePath);
-
       if (!face.found) {
-        setFaceStatus('No face detected. Adjust position and try again.');
-        speak('poor_quality');
-        Alert.alert(
-          'No Face Detected',
-          'Make sure:\n\n- Your face is clearly visible\n- Good lighting (no backlight)\n- Face centered in the oval\n- Hold phone steady',
-        );
-        setProcessing(false);
-        return;
+        setFaceStatus('NO FACE — ADJUST POSITION');
+        Alert.alert('NO FACE DETECTED', 'Ensure good lighting, face centered, hold steady.');
+        setProcessing(false); return;
       }
 
-      // Quality gate
       const quality = checkFaceQuality(face);
-      setQualityInfo(`Quality: ${(quality.score * 100).toFixed(0)}%`);
       if (!quality.passed) {
-        setFaceStatus(getQualityFeedback(quality));
-        speak('poor_quality');
-        Alert.alert('Poor Quality', `${quality.reasons.join('\n')}\n\nPlease adjust and try again.`);
-        setProcessing(false);
-        return;
+        setFaceStatus(getQualityFeedback(quality).toUpperCase());
+        Alert.alert('POOR QUALITY', quality.reasons.join('\n'));
+        setProcessing(false); return;
       }
 
-      setFaceStatus('Generating face embedding...');
+      setFaceStatus('LOADING MODEL & GENERATING EMBEDDING...');
       let emb: number[];
-      try {
-        emb = await getFaceEmbedding(filePath);
-      } catch (embError: any) {
-        Alert.alert('Embedding Error', `Failed to generate face embedding.\n\nError: ${embError?.message || 'Unknown'}`);
-        setProcessing(false);
-        setFaceStatus('Embedding failed. Try again.');
-        return;
+      try { emb = await getFaceEmbedding(filePath); } catch (e: any) {
+        Alert.alert('EMBEDDING ERROR', e?.message || 'Unknown');
+        setProcessing(false); setFaceStatus('FAILED — RETRY'); return;
+      }
+      if (!emb || emb.length === 0) { setProcessing(false); return; }
+      setEmbeddingDims(emb.length);
+
+      setFaceStatus('CHECKING DUPLICATES...');
+      const existing = await getEnrolledUsers();
+      const dup = checkDuplicateEnrollment(emb, existing.map(u => ({ id: u.id, name: u.name, embedding: u.embedding })));
+      if (dup) {
+        Alert.alert('DUPLICATE', `Matches "${dup.name}" at ${(dup.score * 100).toFixed(1)}%`);
+        setProcessing(false); setFaceStatus('DUPLICATE — TRY DIFFERENT PERSON'); return;
       }
 
-      if (!emb || emb.length === 0) {
-        Alert.alert('Error', 'Embedding returned empty. Try again.');
-        setProcessing(false);
-        return;
-      }
-
-      // Check for duplicates
-      setFaceStatus('Checking for duplicates...');
-      const existingUsers = await getEnrolledUsers();
-      const duplicate = checkDuplicateEnrollment(
-        emb,
-        existingUsers.map(u => ({ id: u.id, name: u.name, embedding: u.embedding })),
-      );
-      if (duplicate) {
-        Alert.alert(
-          'Duplicate Face Detected',
-          `This face matches "${duplicate.name}" (${(duplicate.score * 100).toFixed(1)}% similarity).\n\nEach person should only be enrolled once.`,
-        );
-        setProcessing(false);
-        setFaceStatus('Duplicate detected. Try a different person.');
-        return;
-      }
-
-      // Generate BioHash + differential privacy
-      setFaceStatus('Securing biometric template...');
-      const { embedding: privatizedEmb, hash, salt } = prepareEmbeddingForStorage(emb);
-
-      setPhotoPath(filePath);
-      setEmbedding(privatizedEmb);
-      setBioHashStr(hash);
-      setBioHashSalt(salt);
+      setFaceStatus('SECURING TEMPLATE...');
+      const { embedding: priv, hash, salt } = prepareEmbeddingForStorage(emb);
+      setPhotoPath(filePath); setEmbedding(priv); setBioHashStr(hash); setBioHashSalt(salt);
+      setProcessTimeMs(Date.now() - t0);
       setStep('details');
     } catch (e: any) {
-      Alert.alert('Error', `${e.message || 'Unknown error'}`);
-      setFaceStatus('Error. Try again.');
+      Alert.alert('ERROR', e.message || 'Unknown');
+      setFaceStatus('ERROR — RETRY');
     }
     setProcessing(false);
-  }, [processing]);
+  }, [processing, photoOutput]);
 
   const handleAadharChange = (text: string) => {
     setAadhar(text);
     if (text.replace(/[\s-]/g, '').length === 12) {
-      const result = validateAadhar(text);
-      setAadharError(result.valid ? '' : result.error || 'Invalid');
-      if (result.valid) setAadhar(result.formatted);
-    } else {
-      setAadharError('');
-    }
+      const r = validateAadhar(text);
+      setAadharError(r.valid ? '' : r.error || 'Invalid');
+      if (r.valid) setAadhar(r.formatted);
+    } else { setAadharError(''); }
   };
 
   const handleSave = useCallback(async () => {
-    if (!name.trim()) {
-      Alert.alert('Required', "Please enter the person's name");
-      return;
-    }
-    if (!employeeId.trim()) {
-      Alert.alert('Required', 'Please enter the Employee ID');
-      return;
-    }
-    if (aadhar.trim()) {
-      const aadharResult = validateAadhar(aadhar);
-      if (!aadharResult.valid) {
-        Alert.alert('Invalid Aadhaar', aadharResult.error || 'Check Aadhaar number');
-        return;
-      }
-    }
-
+    if (!name.trim()) { Alert.alert('REQUIRED', 'Enter name'); return; }
+    if (!employeeId.trim()) { Alert.alert('REQUIRED', 'Enter Employee ID'); return; }
+    if (aadhar.trim()) { const r = validateAadhar(aadhar); if (!r.valid) { Alert.alert('INVALID AADHAAR', r.error || ''); return; } }
     const user: EnrolledUser = {
       id: `${role}-` + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      name: name.trim(),
-      employeeId: employeeId.trim(),
-      aadhar: aadhar.trim() || undefined,
-      embedding,
-      bioHash: bioHashStr,
-      bioHashSalt: bioHashSalt,
-      photoUri: photoPath,
-      createdAt: Date.now(),
-      synced: false,
-      role,
+      name: name.trim(), employeeId: employeeId.trim(), aadhar: aadhar.trim() || undefined,
+      embedding, bioHash: bioHashStr, bioHashSalt, photoUri: photoPath,
+      createdAt: Date.now(), synced: false, role,
     };
     await saveUser(user);
-    speak('enrollment_complete');
     setStep('done');
   }, [name, employeeId, aadhar, embedding, photoPath, bioHashStr, bioHashSalt, role]);
 
-  if (!hasPermission) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.permText}>Camera permission is required</Text>
-        <TouchableOpacity style={styles.permButton} onPress={requestPermission}>
-          <Text style={styles.permButtonText}>Grant Camera Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (!hasPermission) return (
+    <View style={s.center}>
+      <Text style={s.centerIcon}>{'◎'}</Text>
+      <Text style={s.centerTitle}>CAMERA REQUIRED</Text>
+      <TouchableOpacity style={s.btn} onPress={requestPermission}><Text style={s.btnText}>GRANT</Text></TouchableOpacity>
+    </View>
+  );
+  if (!device) return <View style={s.center}><Text style={s.centerTitle}>NO CAMERA</Text></View>;
 
-  if (!device) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.permText}>No camera found</Text>
+  if (step === 'done') return (
+    <View style={s.center}>
+      <View style={[s.doneCircle, { borderColor: colors.success }]}><Text style={s.doneGlyph}>{'✓'}</Text></View>
+      <Text style={[s.doneTitle, { color: colors.success }]}>ENROLLED</Text>
+      <Text style={s.doneName}>{name}</Text>
+      <View style={s.doneStats}>
+        <Text style={s.doneStat}>{embeddingDims}D embedding | {processTimeMs}ms | BioHash secured</Text>
       </View>
-    );
-  }
+      <View style={s.tagRow}>
+        {[
+          { t: 'BIOHASH', c: colors.cyan },
+          { t: 'DIFF PRIVACY', c: colors.success },
+          { t: 'AES-256', c: colors.accent },
+        ].map((tag, i) => (
+          <View key={i} style={[s.tag, { borderColor: tag.c }]}>
+            <Text style={[s.tagText, { color: tag.c }]}>{tag.t}</Text>
+          </View>
+        ))}
+      </View>
+      <TouchableOpacity style={[s.btn, { marginTop: spacing.xl }]} onPress={() => navigation.goBack()}><Text style={s.btnText}>DONE</Text></TouchableOpacity>
+      <TouchableOpacity style={[s.btnOutline, { marginTop: spacing.md }]} onPress={() => { setStep('camera'); setName(''); setEmployeeId(''); setDepartment(''); setAadhar(''); setEmbedding([]); setFaceStatus('POSITION FACE IN OVAL'); }}>
+        <Text style={s.btnOutlineText}>ENROL ANOTHER</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
-  if (step === 'done') {
-    return (
-      <View style={styles.centered}>
-        <View style={styles.successCircle}>
-          <Text style={styles.successIcon}>{'V'}</Text>
+  if (step === 'details') return (
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={s.form}>
+        <View style={[s.doneCircle, { borderColor: colors.accent }]}><Text style={[s.doneGlyph, { color: colors.accent }]}>{'◎'}</Text></View>
+        <Text style={s.formTitle}>FACE CAPTURED</Text>
+        <Text style={s.formSub}>Enter details to complete enrolment</Text>
+        <View style={s.captureInfo}>
+          <Text style={s.captureInfoText}>{embeddingDims}D vector | {processTimeMs}ms | Dup threshold: {(DUPLICATE_THRESHOLD * 100).toFixed(0)}%</Text>
         </View>
-        <Text style={[styles.title, { marginTop: spacing.lg }]}>Enrolled Successfully!</Text>
-        <Text style={styles.subtitle}>{name} has been registered</Text>
-        <View style={styles.securityBadges}>
-          <View style={styles.secBadge}><Text style={styles.secBadgeText}>BioHash Protected</Text></View>
-          <View style={styles.secBadge}><Text style={styles.secBadgeText}>Diff Privacy</Text></View>
-          <View style={styles.secBadge}><Text style={styles.secBadgeText}>AES-256</Text></View>
+        {[
+          { label: 'FULL NAME', val: name, set: setName, ph: 'Rajesh Kumar' },
+          { label: 'EMPLOYEE ID', val: employeeId, set: setEmployeeId, ph: 'NHAI-2024-001' },
+          { label: 'DEPARTMENT', val: department, set: setDepartment, ph: 'Highway Division' },
+        ].map((f, i) => (
+          <View key={i} style={s.fieldGroup}>
+            <Text style={s.fieldLabel}>{f.label}</Text>
+            <TextInput style={s.input} value={f.val} onChangeText={f.set} placeholder={f.ph} placeholderTextColor={colors.textFaint} />
+          </View>
+        ))}
+        <View style={s.fieldGroup}>
+          <Text style={s.fieldLabel}>AADHAAR (OPTIONAL)</Text>
+          <TextInput style={[s.input, aadharError ? s.inputErr : null]} value={aadhar} onChangeText={handleAadharChange} placeholder="XXXX XXXX XXXX" placeholderTextColor={colors.textFaint} keyboardType="number-pad" maxLength={14} />
+          {aadharError ? <Text style={s.errText}>{aadharError}</Text> : null}
         </View>
-        <TouchableOpacity
-          style={[styles.button, { marginTop: spacing.xl }]}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>Back to Home</Text>
+        <View style={s.secNote}>
+          <Text style={s.secNoteTitle}>SECURITY</Text>
+          <Text style={s.secNoteText}>BioHash (ISO/IEC 24745) + differential privacy + AES-256. Original embedding irrecoverable.</Text>
+        </View>
+        <TouchableOpacity style={s.btn} onPress={handleSave}><Text style={s.btnText}>SAVE ENROLMENT</Text></TouchableOpacity>
+        <TouchableOpacity style={[s.btnOutline, { marginTop: spacing.md }]} onPress={() => { setStep('camera'); setFaceStatus('POSITION FACE IN OVAL'); }}>
+          <Text style={s.btnOutlineText}>RETAKE</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.buttonOutline, { marginTop: spacing.md }]}
-          onPress={() => {
-            setStep('camera');
-            setName('');
-            setEmployeeId('');
-            setAadhar('');
-            setEmbedding([]);
-            setPhotoPath('');
-            setBioHashStr('');
-            setBioHashSalt('');
-            setFaceStatus('Position your face in the frame');
-            speak('position_face');
-          }}>
-          <Text style={styles.buttonOutlineText}>Enroll Another</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (step === 'details') {
-    return (
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.formContainer}>
-          <View style={styles.successCircle}>
-            <Text style={styles.successIcon}>{'O'}</Text>
-          </View>
-          <Text style={styles.title}>Face Captured</Text>
-          <Text style={styles.subtitle}>Enter details to complete enrollment</Text>
-          {qualityInfo ? <Text style={styles.qualityText}>{qualityInfo}</Text> : null}
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g., Rajesh Kumar"
-              placeholderTextColor={colors.textLight}
-              autoFocus
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Employee ID *</Text>
-            <TextInput
-              style={styles.input}
-              value={employeeId}
-              onChangeText={setEmployeeId}
-              placeholder="e.g., NHAI-2024-001"
-              placeholderTextColor={colors.textLight}
-            />
-          </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Aadhaar Number (optional)</Text>
-            <TextInput
-              style={[styles.input, aadharError ? styles.inputError : null]}
-              value={aadhar}
-              onChangeText={handleAadharChange}
-              placeholder="XXXX XXXX XXXX"
-              placeholderTextColor={colors.textLight}
-              keyboardType="number-pad"
-              maxLength={14}
-            />
-            {aadharError ? <Text style={styles.errorText}>{aadharError}</Text> : null}
-          </View>
-
-          <View style={styles.securityNote}>
-            <Text style={styles.securityNoteTitle}>Security</Text>
-            <Text style={styles.securityNoteText}>
-              Face data protected with BioHash (ISO/IEC 24745),
-              differential privacy, and AES-256 encryption.
-              Original embedding cannot be recovered.
-            </Text>
-          </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleSave}>
-            <Text style={styles.buttonText}>Save Enrollment</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.buttonOutline, { marginTop: spacing.md }]}
-            onPress={() => {
-              setStep('camera');
-              setFaceStatus('Position your face in the frame');
-            }}>
-            <Text style={styles.buttonOutlineText}>Retake Photo</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    );
-  }
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.cameraContainer}>
-        <Camera
-          ref={cameraRef}
-          style={StyleSheet.absoluteFill}
-          device={device}
-          isActive={step === 'camera'}
-          photo={true}
-          onError={(error: any) => {
-            Alert.alert('Camera Error', error.message || 'Camera failed');
-          }}
-        />
-        <View style={styles.faceGuide}>
-          <View style={styles.faceOval} />
-        </View>
-        <View style={styles.cameraOverlay}>
-          <Text style={styles.cameraHint}>{faceStatus}</Text>
-        </View>
-        <TouchableOpacity style={styles.flipButton} onPress={flipCamera}>
-          <Text style={styles.flipLabel}>
-            {cameraPosition === 'front' ? 'Front' : 'Back'}
+    <View style={s.root}>
+      <View style={s.cameraWrap}>
+        <Camera style={StyleSheet.absoluteFill} device={device} isActive={step === 'camera'} outputs={[photoOutput]} />
+        <View style={s.ovalWrap}><View style={s.oval} /></View>
+        <View style={s.hintWrap}><Text style={s.hint}>{faceStatus}</Text></View>
+        <TouchableOpacity style={s.flipBtn} onPress={() => setCameraPosition(p => p === 'front' ? 'back' : 'front')}>
+          <Text style={s.flipText}>{cameraPosition === 'front' ? 'FRONT' : 'BACK'}</Text>
+        </TouchableOpacity>
+        {/* Model status indicator */}
+        <View style={s.modelStatus}>
+          <View style={[s.modelDot, { backgroundColor: modelReady ? colors.success : colors.warn }]} />
+          <Text style={s.modelText}>
+            {modelReady ? 'MobileFaceNet INT8 Ready' : 'Loading model...'}
           </Text>
-        </TouchableOpacity>
+        </View>
       </View>
-
-      <View style={styles.bottomPanel}>
-        <TouchableOpacity
-          style={[styles.captureButton, processing && styles.captureButtonDisabled]}
-          onPress={captureAndProcess}
-          disabled={processing}
-          activeOpacity={0.7}>
-          {processing ? (
-            <ActivityIndicator color={colors.white} size="large" />
-          ) : (
-            <View style={styles.captureInner} />
-          )}
+      <View style={s.bottomPanel}>
+        <TouchableOpacity style={[s.captureBtn, processing && s.captureBtnOff]} onPress={captureAndProcess} disabled={processing} activeOpacity={0.7}>
+          {processing ? <ActivityIndicator color={colors.onAccent} size="large" /> : <View style={s.captureInner} />}
         </TouchableOpacity>
-        <Text style={styles.captureHint}>
-          {processing ? 'Processing...' : 'Tap to capture face'}
-        </Text>
+        <Text style={s.captureHint}>{processing ? 'PROCESSING...' : 'TAP TO CAPTURE'}</Text>
       </View>
     </View>
   );
 }
 
-const OVAL_SIZE = 240;
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.black },
-  centered: {
-    flex: 1, backgroundColor: colors.background,
-    alignItems: 'center', justifyContent: 'center', padding: spacing.xl,
+const OVAL = 240;
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
+  center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+  centerIcon: { fontSize: 48, color: colors.accent },
+  centerTitle: { ...typography.h2, marginTop: spacing.lg, letterSpacing: 2 },
+  cameraWrap: { flex: 1 },
+  ovalWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  oval: { width: OVAL, height: OVAL * 1.3, borderRadius: OVAL * 0.65, borderWidth: 2, borderColor: colors.accent, borderStyle: 'dashed' },
+  hintWrap: { position: 'absolute', top: spacing.xxl, left: 0, right: 0, alignItems: 'center' },
+  hint: { ...typography.caption, backgroundColor: 'rgba(10,14,26,0.88)', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: borderRadius.full, overflow: 'hidden', color: colors.accent },
+  flipBtn: { position: 'absolute', top: spacing.xxl, right: spacing.lg, backgroundColor: 'rgba(10,14,26,0.7)', borderRadius: borderRadius.full, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  flipText: { ...typography.caption, color: colors.text },
+  modelStatus: {
+    position: 'absolute', bottom: spacing.lg, left: spacing.lg,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    backgroundColor: 'rgba(10,14,26,0.8)', paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs, borderRadius: borderRadius.full,
   },
-  cameraContainer: { flex: 1, position: 'relative' },
-  faceGuide: {
-    position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center',
+  modelDot: { width: 6, height: 6, borderRadius: 3 },
+  modelText: { fontFamily: MONO, fontSize: 9, color: colors.textDim },
+  bottomPanel: { backgroundColor: colors.surface, paddingVertical: spacing.xl, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.line },
+  captureBtn: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.text },
+  captureBtnOff: { opacity: 0.4 },
+  captureInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.text },
+  captureHint: { ...typography.caption, color: colors.textFaint, marginTop: spacing.sm },
+
+  form: { flexGrow: 1, backgroundColor: colors.bg, padding: spacing.xl, alignItems: 'center' },
+  formTitle: { ...typography.h1, letterSpacing: 3, marginTop: spacing.lg },
+  formSub: { ...typography.bodySmall, marginTop: spacing.xs },
+  captureInfo: {
+    marginTop: spacing.md, backgroundColor: colors.surfaceAlt, borderRadius: borderRadius.sm,
+    paddingVertical: spacing.xs, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line,
   },
-  faceOval: {
-    width: OVAL_SIZE, height: OVAL_SIZE * 1.3,
-    borderRadius: OVAL_SIZE * 0.65, borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.6)', borderStyle: 'dashed',
+  captureInfoText: { fontFamily: MONO, fontSize: 10, color: colors.textDim },
+  fieldGroup: { width: '100%', marginTop: spacing.lg },
+  fieldLabel: { ...typography.caption, color: colors.accent, marginBottom: spacing.xs },
+  input: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: borderRadius.md, padding: spacing.lg, fontSize: 15, color: colors.text, fontFamily: MONO },
+  inputErr: { borderColor: colors.danger },
+  errText: { ...typography.bodySmall, color: colors.danger, marginTop: spacing.xs },
+  secNote: { width: '100%', backgroundColor: colors.accentDim, padding: spacing.lg, borderRadius: borderRadius.md, marginTop: spacing.lg, borderWidth: 1, borderColor: colors.accent },
+  secNoteTitle: { ...typography.caption, color: colors.accent },
+  secNoteText: { fontFamily: MONO, fontSize: 11, color: colors.textDim, marginTop: spacing.xs, lineHeight: 18 },
+
+  doneCircle: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  doneGlyph: { fontSize: 36, fontWeight: '700', color: colors.success },
+  doneTitle: { fontSize: 24, fontWeight: '800', marginTop: spacing.lg, letterSpacing: 3 },
+  doneName: { ...typography.h1, marginTop: spacing.sm },
+  doneStats: {
+    marginTop: spacing.sm, backgroundColor: colors.surfaceAlt, borderRadius: borderRadius.sm,
+    paddingVertical: spacing.xs, paddingHorizontal: spacing.md,
   },
-  cameraOverlay: {
-    position: 'absolute', top: spacing.xxl, left: 0, right: 0,
-    alignItems: 'center',
-  },
-  cameraHint: {
-    color: colors.white, fontSize: 16, fontWeight: '600',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full, overflow: 'hidden',
-  },
-  flipButton: {
-    position: 'absolute', top: spacing.xxl, right: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-  },
-  flipLabel: { color: colors.white, fontSize: 13, fontWeight: '600' },
-  bottomPanel: {
-    backgroundColor: 'rgba(0,0,0,0.8)', paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  captureButton: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: colors.primary, alignItems: 'center',
-    justifyContent: 'center', borderWidth: 4, borderColor: colors.white,
-  },
-  captureButtonDisabled: { opacity: 0.5 },
-  captureInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.white },
-  captureHint: { color: 'rgba(255,255,255,0.7)', marginTop: spacing.sm, fontSize: 13 },
-  formContainer: {
-    flexGrow: 1, backgroundColor: colors.background, padding: spacing.xl,
-    alignItems: 'center',
-  },
-  successCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: colors.successLight, alignItems: 'center', justifyContent: 'center',
-  },
-  successIcon: { fontSize: 36, fontWeight: '700', color: colors.success },
-  title: { ...typography.h2, textAlign: 'center', marginTop: spacing.md },
-  subtitle: { ...typography.bodySmall, textAlign: 'center', marginTop: spacing.xs },
-  qualityText: { ...typography.caption, color: colors.success, marginTop: spacing.xs },
-  inputGroup: { width: '100%', marginTop: spacing.lg },
-  label: { ...typography.bodySmall, fontWeight: '600', marginBottom: spacing.xs },
-  input: {
-    backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border,
-    borderRadius: borderRadius.md, padding: spacing.md, fontSize: 16, color: colors.text,
-  },
-  inputError: { borderColor: colors.error },
-  errorText: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
-  securityNote: {
-    width: '100%', backgroundColor: colors.secondaryLight, padding: spacing.md,
-    borderRadius: borderRadius.md, marginTop: spacing.lg,
-  },
-  securityNoteTitle: { ...typography.bodySmall, fontWeight: '700', color: colors.secondary },
-  securityNoteText: { ...typography.caption, color: colors.secondary, marginTop: spacing.xs, lineHeight: 18 },
-  securityBadges: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-  secBadge: {
-    backgroundColor: colors.secondaryLight, paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs, borderRadius: borderRadius.sm,
-  },
-  secBadgeText: { fontSize: 11, fontWeight: '600', color: colors.secondary },
-  button: {
-    backgroundColor: colors.primary, paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl, borderRadius: borderRadius.md,
-    marginTop: spacing.xl, width: '100%', alignItems: 'center', ...shadows.md,
-  },
-  buttonText: { ...typography.button, color: colors.white },
-  buttonOutline: {
-    borderWidth: 1.5, borderColor: colors.primary, paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl, borderRadius: borderRadius.md,
-    width: '100%', alignItems: 'center',
-  },
-  buttonOutlineText: { ...typography.button, color: colors.primary },
-  permText: { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
-  permButton: {
-    backgroundColor: colors.primary, paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl, borderRadius: borderRadius.md,
-  },
-  permButtonText: { ...typography.button, color: colors.white },
+  doneStat: { fontFamily: MONO, fontSize: 10, color: colors.textDim },
+  tagRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  tag: { borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: borderRadius.sm },
+  tagText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+
+  btn: { backgroundColor: colors.accent, paddingVertical: spacing.lg, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%', alignItems: 'center', marginTop: spacing.xl, ...shadows.md },
+  btnText: { ...typography.button, color: colors.onAccent },
+  btnOutline: { borderWidth: 1.5, borderColor: colors.accent, paddingVertical: spacing.lg, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%', alignItems: 'center' },
+  btnOutlineText: { ...typography.button, color: colors.accent },
 });

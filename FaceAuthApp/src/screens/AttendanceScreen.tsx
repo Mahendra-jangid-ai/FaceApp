@@ -195,15 +195,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   statsBar: {
     flexDirection: 'row',
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    ...shadows.sm,
+    borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   statItem: { flex: 1, alignItems: 'center' },
   statNum: { fontSize: 28, fontWeight: '700' },
   statLbl: { ...typography.caption, marginTop: 2 },
-  statDivider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
+  statDivider: { width: 1, backgroundColor: colors.line, marginVertical: spacing.xs },
   actionRow: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -241,11 +241,11 @@ const styles = StyleSheet.create({
   list: { padding: spacing.md, paddingTop: 0 },
   recordCard: {
     flexDirection: 'row',
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    ...shadows.sm,
+    borderWidth: 1, borderColor: colors.line,
   },
   recordCardActive: {
     borderLeftWidth: 3,

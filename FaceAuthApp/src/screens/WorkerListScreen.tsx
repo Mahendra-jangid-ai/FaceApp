@@ -155,7 +155,7 @@ export default function WorkerListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: {
-    backgroundColor: colors.white, padding: spacing.md, ...shadows.sm,
+    backgroundColor: colors.surface, padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   countRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
   count: { fontSize: 28, fontWeight: '700', color: colors.primary },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   addText: { ...typography.button, color: colors.white },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
-    flexDirection: 'row', backgroundColor: colors.white,
+    flexDirection: 'row', backgroundColor: colors.surface,
     borderRadius: borderRadius.md, padding: spacing.md,
     marginBottom: spacing.sm, ...shadows.sm,
   },

@@ -34,8 +34,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>FaceAuth needs camera access for face enrollment, liveness detection, and authentication.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>FaceAuth uses your location for geofenced site check-in and attendance verification.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>FaceAuth uses Face ID for admin authentication.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

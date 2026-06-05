@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   inputGroup: { width: '100%', marginTop: spacing.lg },
   label: { ...typography.bodySmall, fontWeight: '600', marginBottom: spacing.xs },
   input: {
-    backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
     borderRadius: borderRadius.md, padding: spacing.md, fontSize: 16, color: colors.text,
   },
   button: {

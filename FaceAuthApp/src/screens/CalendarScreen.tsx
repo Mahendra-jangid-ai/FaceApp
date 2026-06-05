@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   monthNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: spacing.md, backgroundColor: colors.white, ...shadows.sm,
+    padding: spacing.md, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   navBtn: { padding: spacing.sm },
   navText: { fontSize: 22, fontWeight: '600', color: colors.primary },
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', padding: spacing.md, gap: spacing.sm,
   },
   stat: {
-    flex: 1, backgroundColor: colors.white, padding: spacing.sm,
+    flex: 1, backgroundColor: colors.surface, padding: spacing.sm,
     borderRadius: borderRadius.md, alignItems: 'center', ...shadows.sm,
   },
   statNum: { fontSize: 22, fontWeight: '700', color: colors.primary },
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   recordsTitle: { ...typography.body, fontWeight: '600', marginBottom: spacing.sm },
   noRecords: { ...typography.bodySmall, textAlign: 'center', padding: spacing.lg },
   recordCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface,
     padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm, ...shadows.sm,
   },
   recordAvatar: {

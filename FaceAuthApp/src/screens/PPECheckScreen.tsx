@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 import { detectPPE, getPPEConfig, type PPEResult, type PPEConfig } from '../services/ppeDetection';
@@ -18,21 +18,23 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PPECheck'>;
 type Step = 'ready' | 'checking' | 'pass' | 'fail';
 
 export default function PPECheckScreen({ navigation }: Props) {
-  const device = useCameraDevice('front');
+  const frontDevice = useCameraDevice('front');
+  const backDevice = useCameraDevice('back');
+  const device = frontDevice ?? backDevice;
   const { hasPermission, requestPermission } = useCameraPermission();
-  const cameraRef = useRef<any>(null);
+  const photoOutput = usePhotoOutput({});
 
   const [step, setStep] = useState<Step>('ready');
   const [result, setResult] = useState<PPEResult | null>(null);
   const [config, setConfig] = useState<PPEConfig | null>(null);
 
   const handleCheck = useCallback(async () => {
-    if (!cameraRef.current) return;
+    if (!photoOutput) return;
     setStep('checking');
 
     try {
-      const photo = await cameraRef.current.takePhoto({ flash: 'off' });
-      const filePath = photo.path.startsWith('/') ? photo.path : `/${photo.path}`;
+      const photoFile = await photoOutput.capturePhotoToFile({ flashMode: 'off' }, {});
+      const filePath = photoFile.filePath.startsWith('/') ? photoFile.filePath : `/${photoFile.filePath}`;
       const ppeConfig = await getPPEConfig();
       setConfig(ppeConfig);
       const ppeResult = await detectPPE(filePath);
@@ -48,7 +50,7 @@ export default function PPECheckScreen({ navigation }: Props) {
     } catch {
       setStep('fail');
     }
-  }, []);
+  }, [photoOutput]);
 
   if (!hasPermission) {
     return (
@@ -124,11 +126,10 @@ export default function PPECheckScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={styles.cameraContainer}>
         <Camera
-          ref={cameraRef}
           style={StyleSheet.absoluteFill}
           device={device}
           isActive={step === 'ready' || step === 'checking'}
-          photo={true}
+          outputs={[photoOutput]}
         />
         <View style={styles.overlay}>
           <View style={styles.targetBox} />
@@ -197,8 +198,8 @@ const styles = StyleSheet.create({
   resultIcon: { fontSize: 48, color: colors.white, fontWeight: '700' },
   resultTitle: { fontSize: 24, fontWeight: '700', marginTop: spacing.lg },
   detailsCard: {
-    backgroundColor: colors.white, borderRadius: borderRadius.lg,
-    padding: spacing.lg, marginTop: spacing.lg, width: '100%', ...shadows.md,
+    backgroundColor: colors.surface, borderRadius: borderRadius.lg,
+    padding: spacing.lg, marginTop: spacing.lg, width: '100%', borderWidth: 1, borderColor: colors.line,
   },
   detailRow: {
     flexDirection: 'row', justifyContent: 'space-between',

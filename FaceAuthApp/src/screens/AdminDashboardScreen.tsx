@@ -192,8 +192,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', padding: spacing.md, gap: spacing.sm,
   },
   statCard: {
-    width: '31%', backgroundColor: colors.white, padding: spacing.md,
-    borderRadius: borderRadius.md, alignItems: 'center', ...shadows.sm,
+    width: '31%', backgroundColor: colors.surface, padding: spacing.md,
+    borderRadius: borderRadius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.line,
   },
   statNum: { fontSize: 24, fontWeight: '700' },
   statLabel: { ...typography.caption, marginTop: 2 },
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5, marginBottom: spacing.sm,
   },
   menuCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface,
     padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm, ...shadows.sm,
   },
   menuContent: { flex: 1 },

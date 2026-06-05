@@ -1,9 +1,20 @@
 import { NativeModules } from 'react-native';
 import type { FaceDetectionResult } from '../types';
 
-const { FaceProcessor } = NativeModules;
+const FaceProcessor = NativeModules.FaceProcessor;
 
 export async function detectFace(imagePath: string): Promise<FaceDetectionResult & { error?: string }> {
+  if (!FaceProcessor || typeof FaceProcessor.detectFace !== 'function') {
+    return {
+      found: false,
+      smilingProbability: -1,
+      leftEyeOpenProbability: -1,
+      rightEyeOpenProbability: -1,
+      headEulerAngleY: 0,
+      headEulerAngleZ: 0,
+      error: 'FaceProcessor native module not available',
+    };
+  }
   try {
     const result = await FaceProcessor.detectFace(imagePath);
     return {
@@ -32,8 +43,10 @@ export async function detectFace(imagePath: string): Promise<FaceDetectionResult
   }
 }
 
-// DO NOT swallow errors - throw them so the UI can display them
 export async function getFaceEmbedding(imagePath: string): Promise<number[]> {
+  if (!FaceProcessor || typeof FaceProcessor.getEmbedding !== 'function') {
+    throw new Error('FaceProcessor native module not available. Reinstall the app.');
+  }
   const result = await FaceProcessor.getEmbedding(imagePath);
   if (result && result.embedding) {
     return result.embedding as number[];
