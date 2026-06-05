@@ -26,8 +26,8 @@ FaceAuth is an offline-first biometric authentication and attendance management 
 |-------|-----------|
 | Framework | React Native 0.85, New Architecture (Hermes) |
 | Camera | VisionCamera v5.0.11 (Nitro modules) |
-| Face Detection | Google ML Kit Face Detection |
-| Embeddings | ONNX Runtime + MobileFaceNet INT8 (1.15 MB) |
+| Face Detection | Google ML Kit Face Detection (offline, bundled) |
+| Embeddings | Eye-aligned 128-D facial-geometry signature (ML Kit landmarks + contours) |
 | Storage | AsyncStorage (encrypted at rest) |
 | Encryption | AES-256-GCM via react-native-aes-crypto |
 | Navigation | React Navigation 7 (native stack) |
@@ -51,7 +51,7 @@ src/
     AdminDashboardScreen.tsx # Admin controls + system health
     SettingsScreen.tsx       # System configuration
   services/
-    faceProcessor.ts         # ML Kit + ONNX embedding pipeline
+    faceProcessor.ts         # ML Kit detection + eye-aligned embedding pipeline
     embeddingUtils.ts        # Cosine similarity + matching
     bioHash.ts               # ISO/IEC 24745 cancellable templates
     encryption.ts            # AES-256-GCM encryption
@@ -101,13 +101,14 @@ Quality Gate
     |-- Head angle: |Y| < 15, |Z| < 10
     |
     v
-ONNX Runtime: MobileFaceNet INT8
-    |-- Input: 112x112 RGB normalized
-    |-- Output: 128D float32 embedding
-    |-- Inference: ~50ms on mobile
+Eye-Aligned Geometry Embedding
+    |-- Anchor frame: eye midpoint origin, eye-line x-axis,
+    |   inter-ocular distance scale (pose/scale/roll invariant)
+    |-- 128D L2-normalized signature from landmarks + contours
+    |-- On-device, no model download, runs on every phone
     |
     v
-Duplicate Check (cosine similarity > 0.75)
+Duplicate Check (cosine similarity > 0.88)
     |
     v
 BioHash Generation (ISO/IEC 24745)
@@ -182,13 +183,13 @@ Attendance Record (check-in / check-out toggle)
 
 | Metric | Value |
 |--------|-------|
-| Model Size | 1.15 MB (MobileFaceNet INT8 quantized) |
-| Embedding Dimensions | 128D float32 |
-| Inference Time | ~50ms (mobile device) |
+| Embedding | Eye-aligned 128-D facial geometry (no model download) |
+| Embedding Dimensions | 128D L2-normalized float |
+| Embedding Time | ~30ms (on-device, ML Kit landmarks/contours) |
 | Face Detection | ~100ms (ML Kit) |
 | Full Pipeline | ~300-500ms end-to-end |
-| Match Threshold | 0.45 cosine similarity |
-| Duplicate Threshold | 0.75 cosine similarity |
+| Match Threshold | 0.80 cosine similarity |
+| Duplicate Threshold | 0.88 cosine similarity |
 | Liveness Challenges | 3 per session (randomized) |
 | Anti-Spoof Threshold | 0.30 Laplacian score |
 | Lockout Policy | 3 failures -> 30s cooldown |
@@ -259,7 +260,7 @@ GET  /api/v1/models/latest      # OTA model updates
 | Template Protection | BioHash + differential privacy | Raw biometric storage |
 | Liveness Detection | 3-factor randomized challenges | Single factor or none |
 | Anti-Spoof | Laplacian variance analysis | Basic or none |
-| Model Size | 1.15 MB (INT8 quantized) | 10-50 MB typical |
+| Footprint | No model download — runs on any phone | 10-50 MB models |
 | Privacy Compliance | ISO/IEC 24745 + GDPR | Varies |
 | PPE Integration | Built-in compliance check | Separate system |
 | Adaptive Thresholds | Environment-aware scoring | Fixed thresholds |

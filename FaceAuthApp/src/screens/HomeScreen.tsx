@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -59,19 +60,15 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={s.header}>
         <View style={s.headerLeft}>
           <View style={s.logoRow}>
-            <View style={s.logoIcon}>
-              <View style={s.logoFace}>
-                <View style={s.logoEyeRow}>
-                  <View style={s.logoEye} />
-                  <View style={s.logoEye} />
-                </View>
-                <View style={s.logoScanLine} />
-              </View>
-              <View style={s.logoBracketTL} />
-              <View style={s.logoBracketBR} />
+            <View style={s.logoBadge}>
+              <Image
+                source={require('../assets/nhai_logo.png')}
+                style={s.logoImg}
+                resizeMode="contain"
+              />
             </View>
             <View>
-              <Text style={s.brand}>FACE<Text style={s.brandAccent}>AUTH</Text></Text>
+              <Text style={s.brand}>NHAI <Text style={s.brandAccent}>FACE AUTH</Text></Text>
               <Text style={s.brandSub}>NHAI BIOMETRIC SYSTEM</Text>
             </View>
           </View>
@@ -83,7 +80,7 @@ export default function HomeScreen({ navigation }: Props) {
               {online ? 'ONLINE' : 'OFFLINE'}
             </Text>
           </View>
-          <Text style={s.modelTag}>MobileFaceNet INT8</Text>
+          <Text style={s.modelTag}>ML Kit Face Engine</Text>
         </View>
       </View>
 
@@ -225,26 +222,13 @@ const s = StyleSheet.create({
   },
   headerLeft: {},
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  logoIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: colors.accentDim, borderWidth: 1.5, borderColor: colors.accent,
-    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+  logoBadge: {
+    width: 44, height: 44, borderRadius: 10,
+    backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
+    padding: 4, ...shadows.sm,
   },
-  logoFace: { alignItems: 'center', justifyContent: 'center' },
-  logoEyeRow: { flexDirection: 'row', gap: 6, marginBottom: 3 },
-  logoEye: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.accent },
-  logoScanLine: { width: 18, height: 1.5, backgroundColor: colors.cyan, borderRadius: 1 },
-  logoBracketTL: {
-    position: 'absolute', top: 5, left: 5,
-    width: 8, height: 8, borderTopWidth: 1.5, borderLeftWidth: 1.5,
-    borderColor: colors.cyan, borderTopLeftRadius: 2,
-  },
-  logoBracketBR: {
-    position: 'absolute', bottom: 5, right: 5,
-    width: 8, height: 8, borderBottomWidth: 1.5, borderRightWidth: 1.5,
-    borderColor: colors.cyan, borderBottomRightRadius: 2,
-  },
-  brand: { fontSize: 24, fontWeight: '900', color: colors.text, letterSpacing: 2 },
+  logoImg: { width: '100%', height: '100%' },
+  brand: { fontSize: 20, fontWeight: '900', color: colors.text, letterSpacing: 1.5 },
   brandAccent: { color: colors.accent },
   brandSub: { fontSize: 9, fontWeight: '700', color: colors.textFaint, letterSpacing: 1.5, marginTop: 1 },
   headerRight: { alignItems: 'flex-end' },

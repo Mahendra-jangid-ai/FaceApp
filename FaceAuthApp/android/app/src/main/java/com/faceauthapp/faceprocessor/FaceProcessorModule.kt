@@ -6,380 +6,281 @@ import android.graphics.Color
 import android.graphics.Matrix
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
-import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtSession
 import com.facebook.react.bridge.*
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.face.FaceLandmark
 import java.io.File
-import java.nio.FloatBuffer
-import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class FaceProcessorModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
     override fun getName() = "FaceProcessor"
 
-    private val faceDetectorOptions = FaceDetectorOptions.Builder()
-        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
-        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
-        .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-        .setMinFaceSize(0.10f)
-        .build()
+    /* ── Detectors (async ML Kit — the proven, reliable usage) ───────── */
 
-    private val faceDetector = FaceDetection.getClient(faceDetectorOptions)
+    private val fastDetector = FaceDetection.getClient(
+        FaceDetectorOptions.Builder()
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+            .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
+            .setMinFaceSize(0.10f)
+            .build()
+    )
 
-    private var ortEnv: OrtEnvironment? = null
-    private var ortSession: OrtSession? = null
-
-    private fun getOrtSession(): OrtSession {
-        if (ortSession == null) {
-            ortEnv = OrtEnvironment.getEnvironment()
-            // Try INT8 first (1.15 MB, faster), fall back to FP32
-            val modelName = try {
-                reactContext.assets.open("mobilefacenet_int8.onnx").close()
-                "mobilefacenet_int8.onnx"
-            } catch (e: Exception) {
-                "mobilefacenet_fp32.onnx"
-            }
-            android.util.Log.d("FaceProcessor", "Loading ONNX model: $modelName")
-            val modelBytes = reactContext.assets.open(modelName).readBytes()
-            ortSession = ortEnv!!.createSession(modelBytes)
-        }
-        return ortSession!!
-    }
+    /* ── Image loading (EXIF rotation only — no blocking detection) ──── */
 
     private fun resolvePath(imagePath: String): String {
-        var path = imagePath
-        if (path.startsWith("file://")) path = path.removePrefix("file://")
-        if (path.startsWith("file:")) path = path.removePrefix("file:")
-        return path
+        var p = imagePath
+        if (p.startsWith("file://")) p = p.removePrefix("file://")
+        if (p.startsWith("file:")) p = p.removePrefix("file:")
+        return p
     }
 
-    /**
-     * Read EXIF orientation and rotate bitmap so the face is upright.
-     * This is the #1 reason ML Kit fails on Android camera photos.
-     */
-    private fun loadAndRotateBitmap(imagePath: String): Bitmap? {
+    private fun loadBitmap(imagePath: String): Bitmap? {
         return try {
             val path = resolvePath(imagePath)
 
-            // Handle content:// URIs
             if (imagePath.startsWith("content://")) {
-                val uri = Uri.parse(imagePath)
-                val inputStream = reactContext.contentResolver.openInputStream(uri)
-                    ?: return null
-                return BitmapFactory.decodeStream(inputStream)
+                val s = reactContext.contentResolver.openInputStream(Uri.parse(imagePath)) ?: return null
+                return BitmapFactory.decodeStream(s)
             }
 
             val file = File(path)
-            if (!file.exists()) {
-                android.util.Log.e("FaceProcessor", "File not found: $path")
-                return null
-            }
+            if (!file.exists()) { android.util.Log.e("FP", "Not found: $path"); return null }
 
-            // Downsample large camera images to avoid OOM
-            val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(file.absolutePath, boundsOpts)
-            val imgWidth = boundsOpts.outWidth
-            val imgHeight = boundsOpts.outHeight
-            var sampleSize = 1
-            while (imgWidth / sampleSize > 1280 || imgHeight / sampleSize > 1280) {
-                sampleSize *= 2
-            }
+            val bo = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bo)
+            var ss = 1
+            while (bo.outWidth / ss > 1280 || bo.outHeight / ss > 1280) ss *= 2
 
-            val opts = BitmapFactory.Options().apply {
-                inPreferredConfig = Bitmap.Config.ARGB_8888
-                inSampleSize = sampleSize
-            }
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath, opts)
-                ?: return null
+            val bmp = BitmapFactory.decodeFile(
+                file.absolutePath,
+                BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888; inSampleSize = ss }
+            ) ?: return null
 
-            // Read EXIF rotation
-            val rotation = try {
+            val rot = try {
                 val exif = ExifInterface(file.absolutePath)
-                when (exif.getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_NORMAL
-                )) {
-                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_90  -> 90f
                     ExifInterface.ORIENTATION_ROTATE_180 -> 180f
                     ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                    ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> -1f  // special: flip
-                    ExifInterface.ORIENTATION_FLIP_VERTICAL -> -2f    // special: flip
+                    ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> -1f
                     else -> 0f
                 }
-            } catch (e: Exception) {
-                android.util.Log.w("FaceProcessor", "Could not read EXIF: ${e.message}")
-                0f
-            }
+            } catch (_: Exception) { 0f }
 
-            android.util.Log.d("FaceProcessor", "Image: ${bitmap.width}x${bitmap.height}, EXIF rotation: $rotation, sampleSize: $sampleSize")
-
-            // Apply rotation if needed
-            if (rotation > 0f) {
-                val matrix = Matrix()
-                matrix.postRotate(rotation)
-                val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-                if (rotated !== bitmap) bitmap.recycle()
-                rotated
-            } else if (rotation == -1f) {
-                // Horizontal flip
-                val matrix = Matrix()
-                matrix.preScale(-1f, 1f)
-                val flipped = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-                if (flipped !== bitmap) bitmap.recycle()
-                flipped
-            } else {
-                bitmap
+            when {
+                rot > 0f -> { val m = Matrix(); m.postRotate(rot); val r = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true); if (r !== bmp) bmp.recycle(); r }
+                rot == -1f -> { val m = Matrix(); m.preScale(-1f, 1f); val r = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true); if (r !== bmp) bmp.recycle(); r }
+                else -> bmp
             }
         } catch (e: Throwable) {
-            android.util.Log.e("FaceProcessor", "loadAndRotateBitmap error: ${e.message}", e)
+            android.util.Log.e("FP", "loadBitmap error: ${e.message}", e)
             null
         }
     }
 
-    /**
-     * Laplacian variance — measures image sharpness in the face region.
-     * Real faces have high-frequency texture; printed photos and screens are blurry/flat.
-     * Returns 0..1 where higher = more likely real.
-     */
-    private fun computeSpoofScore(bitmap: Bitmap, faceLeft: Int, faceTop: Int, faceWidth: Int, faceHeight: Int): Double {
-        val left = maxOf(0, faceLeft)
-        val top = maxOf(0, faceTop)
-        val right = minOf(bitmap.width, faceLeft + faceWidth)
-        val bottom = minOf(bitmap.height, faceTop + faceHeight)
-        val w = right - left
-        val h = bottom - top
-        if (w < 20 || h < 20) return 0.5
+    /* ── Anti-spoof (Laplacian variance) ─────────────────────────────── */
 
-        val face = Bitmap.createBitmap(bitmap, left, top, w, h)
-        val scaled = Bitmap.createScaledBitmap(face, 64, 64, true)
-        if (scaled !== face) face.recycle()
+    private fun computeSpoofScore(bitmap: Bitmap, left: Int, top: Int, w: Int, h: Int): Double {
+        val l = maxOf(0, left); val t = maxOf(0, top)
+        val r = minOf(bitmap.width, left + w); val b = minOf(bitmap.height, top + h)
+        val cw = r - l; val ch = b - t
+        if (cw < 20 || ch < 20) return 0.5
+
+        val face = Bitmap.createBitmap(bitmap, l, t, cw, ch)
+        val sc = Bitmap.createScaledBitmap(face, 64, 64, true)
+        if (sc !== face) face.recycle()
 
         val gray = Array(64) { y -> IntArray(64) { x ->
-            val p = scaled.getPixel(x, y)
+            val p = sc.getPixel(x, y)
             (Color.red(p) * 299 + Color.green(p) * 587 + Color.blue(p) * 114) / 1000
         }}
-        scaled.recycle()
+        sc.recycle()
 
-        // Laplacian kernel convolution
-        var sum = 0.0
-        var sumSq = 0.0
-        var count = 0
-        for (y in 1 until 63) {
-            for (x in 1 until 63) {
-                val lap = -4 * gray[y][x] + gray[y-1][x] + gray[y+1][x] + gray[y][x-1] + gray[y][x+1]
-                sum += lap
-                sumSq += lap.toDouble() * lap
-                count++
-            }
+        var sum = 0.0; var sumSq = 0.0; var cnt = 0
+        for (y in 1 until 63) for (x in 1 until 63) {
+            val lap = -4 * gray[y][x] + gray[y-1][x] + gray[y+1][x] + gray[y][x-1] + gray[y][x+1]
+            sum += lap; sumSq += lap.toDouble() * lap; cnt++
         }
-        val mean = sum / count
-        val variance = (sumSq / count) - (mean * mean)
-
-        // Variance > 200 is very sharp (real face); < 50 is flat (printed/screen)
-        // Map to 0..1 with sigmoid-like curve
-        val score = 1.0 / (1.0 + Math.exp(-(variance - 100.0) / 40.0))
-        android.util.Log.d("FaceProcessor", "spoofScore: variance=${"%.1f".format(variance)} score=${"%.3f".format(score)}")
-        return score
+        val mean = sum / cnt
+        val variance = (sumSq / cnt) - (mean * mean)
+        return 1.0 / (1.0 + Math.exp(-(variance - 100.0) / 40.0))
     }
+
+    /* ── Eye-aligned landmark 128-D embedding ────────────────────────── */
+    //  Coordinate frame anchored to the eyes:
+    //    • origin = eye midpoint   • x-axis = eye line (cancels head roll)
+    //    • scale  = inter-ocular distance (cancels camera distance)
+    //  → same person produces a near-identical vector across captures.
+
+    private data class Frame(val mx: Float, val my: Float, val cosA: Float, val sinA: Float, val iod: Float)
+
+    private fun buildFrame(face: Face): Frame {
+        val le = face.getLandmark(FaceLandmark.LEFT_EYE)?.position
+        val re = face.getLandmark(FaceLandmark.RIGHT_EYE)?.position
+        if (le != null && re != null) {
+            val mx = (le.x + re.x) / 2f
+            val my = (le.y + re.y) / 2f
+            val dx = re.x - le.x
+            val dy = re.y - le.y
+            val iod = maxOf(sqrt(dx * dx + dy * dy), 1f)
+            val angle = atan2(dy, dx)
+            return Frame(mx, my, cos(-angle), sin(-angle), iod)
+        }
+        val b = face.boundingBox
+        return Frame(b.centerX().toFloat(), b.centerY().toFloat(), 1f, 0f, maxOf(b.width().toFloat(), 1f))
+    }
+
+    private fun tx(px: Float, py: Float, fr: Frame): Pair<Float, Float> {
+        val dx = px - fr.mx
+        val dy = py - fr.my
+        val rx = dx * fr.cosA - dy * fr.sinA
+        val ry = dx * fr.sinA + dy * fr.cosA
+        return Pair(rx / fr.iod, ry / fr.iod)
+    }
+
+    // Landmark-ONLY embedding (no contours) so the vector is identical
+    // whether the contour or basic detector produced the face → enroll and
+    // scan always match. Enriched with pairwise distances for discrimination.
+    private fun extractLandmarkEmbedding(face: Face): FloatArray {
+        val fr = buildFrame(face)
+        val f = mutableListOf<Float>()
+
+        // Collect eye-aligned positions of the 10 distinct landmarks
+        val types = intArrayOf(
+            FaceLandmark.LEFT_EYE, FaceLandmark.RIGHT_EYE,
+            FaceLandmark.NOSE_BASE,
+            FaceLandmark.MOUTH_LEFT, FaceLandmark.MOUTH_RIGHT, FaceLandmark.MOUTH_BOTTOM,
+            FaceLandmark.LEFT_CHEEK, FaceLandmark.RIGHT_CHEEK,
+            FaceLandmark.LEFT_EAR, FaceLandmark.RIGHT_EAR
+        )
+        val pos = ArrayList<Pair<Float, Float>>()
+        for (t in types) {
+            val lm = face.getLandmark(t)?.position
+            pos.add(if (lm != null) tx(lm.x, lm.y, fr) else Pair(0f, 0f))
+        }
+
+        // 1) Eye-aligned positions (10 × 2 = 20 dims)
+        for (p in pos) { f.add(p.first); f.add(p.second) }
+
+        // 2) All pairwise distances (C(10,2) = 45 dims) — rich shape signature
+        fun dist(a: Pair<Float, Float>, b: Pair<Float, Float>): Float {
+            val dx = a.first - b.first; val dy = a.second - b.second
+            return sqrt(dx * dx + dy * dy)
+        }
+        for (i in pos.indices) for (j in i + 1 until pos.size) f.add(dist(pos[i], pos[j]))
+
+        // 3) Derived facial ratios (stable per person)
+        val noseBase = pos[2]; val mouthB = pos[5]
+        f.add(noseBase.second)                       // eyes→nose span
+        f.add(mouthB.second)                          // eyes→mouth span
+        f.add(dist(pos[3], pos[4]))                   // mouth width
+        f.add(dist(pos[6], pos[7]))                   // cheek width
+        f.add(dist(pos[8], pos[9]))                   // ear-to-ear width
+        f.add(dist(noseBase, mouthB))                 // nose→mouth distance
+        val faceB = face.boundingBox
+        f.add(faceB.width().toFloat() / maxOf(faceB.height().toFloat(), 1f)) // aspect
+
+        // Pad / truncate to exactly 128
+        while (f.size < 128) f.add(0f)
+        val out = FloatArray(128) { f[it] }
+
+        // L2-normalize for cosine similarity
+        var norm = 0f; for (v in out) norm += v * v; norm = sqrt(norm)
+        if (norm > 0f) for (i in out.indices) out[i] /= norm
+        return out
+    }
+
+    /* ── detectFace (ASYNC — used for liveness + spoof) ──────────────── */
 
     @ReactMethod
     fun detectFace(imagePath: String, promise: Promise) {
         try {
-            val bitmap = loadAndRotateBitmap(imagePath)
+            val bitmap = loadBitmap(imagePath)
             if (bitmap == null) {
-                promise.resolve(Arguments.createMap().apply {
-                    putBoolean("found", false)
-                    putString("error", "Could not load image: $imagePath")
-                })
+                promise.resolve(Arguments.createMap().apply { putBoolean("found", false); putString("error", "Could not load image") })
                 return
             }
 
-            android.util.Log.d("FaceProcessor", "detectFace: loaded ${bitmap.width}x${bitmap.height}")
-
-            // Use InputImage.fromBitmap with rotation=0 since we already rotated
             val image = InputImage.fromBitmap(bitmap, 0)
-            faceDetector.process(image)
+            fastDetector.process(image)
                 .addOnSuccessListener { faces ->
-                    android.util.Log.d("FaceProcessor", "detectFace: found ${faces.size} faces")
                     if (faces.isEmpty()) {
                         bitmap.recycle()
-                        promise.resolve(Arguments.createMap().apply {
-                            putBoolean("found", false)
-                            putString("error", "ML Kit found 0 faces in ${bitmap.width}x${bitmap.height} image")
-                        })
+                        promise.resolve(Arguments.createMap().apply { putBoolean("found", false); putString("error", "No face") })
                         return@addOnSuccessListener
                     }
-
-                    val face = faces[0]
-                    val bounds = face.boundingBox
-                    val spoofScore = try {
-                        computeSpoofScore(bitmap, bounds.left, bounds.top, bounds.width(), bounds.height())
-                    } catch (e: Throwable) { 0.5 }
+                    val face = faces[0]; val bounds = face.boundingBox
+                    val spoof = try { computeSpoofScore(bitmap, bounds.left, bounds.top, bounds.width(), bounds.height()) } catch (_: Throwable) { 0.5 }
                     bitmap.recycle()
                     promise.resolve(Arguments.createMap().apply {
                         putBoolean("found", true)
-                        putInt("x", bounds.left)
-                        putInt("y", bounds.top)
-                        putInt("width", bounds.width())
-                        putInt("height", bounds.height())
+                        putInt("x", bounds.left); putInt("y", bounds.top)
+                        putInt("width", bounds.width()); putInt("height", bounds.height())
                         putDouble("smilingProbability", (face.smilingProbability ?: -1f).toDouble())
                         putDouble("leftEyeOpenProbability", (face.leftEyeOpenProbability ?: -1f).toDouble())
                         putDouble("rightEyeOpenProbability", (face.rightEyeOpenProbability ?: -1f).toDouble())
                         putDouble("headEulerAngleY", face.headEulerAngleY.toDouble())
                         putDouble("headEulerAngleZ", face.headEulerAngleZ.toDouble())
-                        putDouble("spoofScore", spoofScore)
+                        putDouble("spoofScore", spoof)
                     })
                 }
                 .addOnFailureListener { e ->
                     bitmap.recycle()
-                    android.util.Log.e("FaceProcessor", "ML Kit error: ${e.message}", e)
-                    promise.resolve(Arguments.createMap().apply {
-                        putBoolean("found", false)
-                        putString("error", "ML Kit failed: ${e.message}")
-                    })
+                    promise.resolve(Arguments.createMap().apply { putBoolean("found", false); putString("error", "ML Kit: ${e.message}") })
                 }
         } catch (e: Throwable) {
             promise.reject("DETECT_ERROR", e.message, e)
         }
     }
 
+    /* ── getEmbedding (ASYNC — eye-aligned landmark embedding) ─────────
+     *  Robust two-stage detection:
+     *    1) contourDetector  → richest features (landmarks + contours)
+     *    2) if it finds nothing, fall back to fastDetector (landmarks only)
+     *  The fastDetector is the same one detectFace used, so if a face was
+     *  just detected, embedding generation can never fail with "no face".
+     */
+
+    private fun resolveEmbedding(bitmap: Bitmap, face: Face, promise: Promise) {
+        try {
+            val emb = extractLandmarkEmbedding(face)
+            val arr = Arguments.createArray(); for (v in emb) arr.pushDouble(v.toDouble())
+            promise.resolve(Arguments.createMap().apply { putArray("embedding", arr); putString("method", "landmark") })
+        } catch (e: Throwable) {
+            promise.reject("EMBEDDING_ERROR", "Failed: ${e.message}")
+        }
+    }
+
     @ReactMethod
     fun getEmbedding(imagePath: String, promise: Promise) {
         try {
-            // Step 1: Load image
-            android.util.Log.d("FaceProcessor", "getEmbedding: loading $imagePath")
-            val bitmap = loadAndRotateBitmap(imagePath)
-            if (bitmap == null) {
-                promise.reject("NO_IMAGE", "Could not load image: $imagePath")
-                return
-            }
-            android.util.Log.d("FaceProcessor", "getEmbedding: bitmap ${bitmap.width}x${bitmap.height}")
-
-            // Step 2: Detect face
+            val bitmap = loadBitmap(imagePath)
+            if (bitmap == null) { promise.reject("NO_IMAGE", "Could not load image"); return }
             val image = InputImage.fromBitmap(bitmap, 0)
-            faceDetector.process(image)
+
+            // Use the SAME basic detector that detectFace uses, so if a face
+            // was just detected, embedding generation can never fail.
+            fastDetector.process(image)
                 .addOnSuccessListener { faces ->
-                    if (faces.isEmpty()) {
-                        promise.reject("NO_FACE", "No face in ${bitmap.width}x${bitmap.height} image")
-                        return@addOnSuccessListener
-                    }
-
-                    try {
-                        // Step 3: Crop face
-                        val face = faces[0]
-                        val bounds = face.boundingBox
-                        android.util.Log.d("FaceProcessor", "getEmbedding: face at ${bounds}")
-
-                        val expandX = (bounds.width() * 0.25f).toInt()
-                        val expandY = (bounds.height() * 0.25f).toInt()
-                        val left = maxOf(0, bounds.left - expandX)
-                        val top = maxOf(0, bounds.top - expandY)
-                        val right = minOf(bitmap.width, bounds.right + expandX)
-                        val bottom = minOf(bitmap.height, bounds.bottom + expandY)
-                        val cropW = right - left
-                        val cropH = bottom - top
-
-                        if (cropW <= 0 || cropH <= 0) {
-                            promise.reject("BAD_CROP", "Invalid crop: ${cropW}x${cropH}")
-                            return@addOnSuccessListener
-                        }
-
-                        val faceBitmap = Bitmap.createBitmap(bitmap, left, top, cropW, cropH)
-                        val resized = Bitmap.createScaledBitmap(faceBitmap, 112, 112, true)
-                        android.util.Log.d("FaceProcessor", "getEmbedding: cropped & resized to 112x112")
-
-                        // Step 4: Preprocess pixels
-                        val floatBuffer = FloatBuffer.allocate(3 * 112 * 112)
-                        val pixels = IntArray(112 * 112)
-                        resized.getPixels(pixels, 0, 112, 0, 0, 112, 112)
-
-                        for (c in 0..2) {
-                            for (i in pixels.indices) {
-                                val pixel = pixels[i]
-                                val value = when (c) {
-                                    0 -> ((pixel shr 16) and 0xFF) / 127.5f - 1f
-                                    1 -> ((pixel shr 8) and 0xFF) / 127.5f - 1f
-                                    2 -> (pixel and 0xFF) / 127.5f - 1f
-                                    else -> 0f
-                                }
-                                floatBuffer.put(value)
-                            }
-                        }
-                        floatBuffer.rewind()
-                        android.util.Log.d("FaceProcessor", "getEmbedding: preprocessed ${floatBuffer.remaining()} floats")
-
-                        // Step 5: Load ONNX model
-                        val session: OrtSession
-                        try {
-                            session = getOrtSession()
-                            android.util.Log.d("FaceProcessor", "getEmbedding: ONNX session ready")
-                        } catch (onnxErr: Exception) {
-                            android.util.Log.e("FaceProcessor", "ONNX load failed: ${onnxErr.message}", onnxErr)
-                            promise.reject("ONNX_LOAD", "Failed to load ONNX model: ${onnxErr.message}", onnxErr)
-                            return@addOnSuccessListener
-                        }
-
-                        // Step 6: Run inference
-                        val env = ortEnv!!
-                        val inputTensor = OnnxTensor.createTensor(env, floatBuffer, longArrayOf(1, 3, 112, 112))
-                        android.util.Log.d("FaceProcessor", "getEmbedding: running inference...")
-
-                        val output = session.run(mapOf("input" to inputTensor))
-                        android.util.Log.d("FaceProcessor", "getEmbedding: inference done, output count=${output.size()}")
-
-                        // Step 7: Extract embedding - handle both float[][] and float[] output
-                        val rawValue = output[0].value
-                        android.util.Log.d("FaceProcessor", "getEmbedding: output type=${rawValue?.javaClass?.name}")
-
-                        val embedding: FloatArray = when (rawValue) {
-                            is Array<*> -> {
-                                // float[][] -> take first row
-                                val firstRow = rawValue[0]
-                                if (firstRow is FloatArray) firstRow
-                                else throw Exception("Unexpected inner type: ${firstRow?.javaClass?.name}")
-                            }
-                            is FloatArray -> rawValue
-                            else -> throw Exception("Unexpected output type: ${rawValue?.javaClass?.name}")
-                        }
-
-                        android.util.Log.d("FaceProcessor", "getEmbedding: embedding size=${embedding.size}")
-
-                        // Step 8: L2 normalize
-                        var norm = 0f
-                        for (v in embedding) norm += v * v
-                        norm = Math.sqrt(norm.toDouble()).toFloat()
-
-                        val embeddingArray = Arguments.createArray()
-                        for (v in embedding) {
-                            embeddingArray.pushDouble((if (norm > 0f) v / norm else v).toDouble())
-                        }
-
-                        inputTensor.close()
-                        output.close()
-                        faceBitmap.recycle()
-                        resized.recycle()
-
-                        android.util.Log.d("FaceProcessor", "getEmbedding: SUCCESS, ${embeddingArray.size()} dims")
-                        promise.resolve(Arguments.createMap().apply {
-                            putArray("embedding", embeddingArray)
-                        })
-                    } catch (e: Exception) {
-                        android.util.Log.e("FaceProcessor", "getEmbedding inference error: ${e.message}", e)
-                        promise.reject("INFERENCE_ERROR", "Inference failed: ${e.message}", e)
-                    }
+                    if (faces.isNotEmpty()) resolveEmbedding(bitmap, faces[0], promise)
+                    else promise.reject("NO_FACE", "No face detected")
+                    bitmap.recycle()
                 }
                 .addOnFailureListener { e ->
-                    android.util.Log.e("FaceProcessor", "getEmbedding ML Kit error: ${e.message}", e)
-                    promise.reject("DETECT_ERROR", "Face detection failed: ${e.message}", e)
+                    bitmap.recycle()
+                    promise.reject("DETECT_ERROR", "Detection failed: ${e.message}")
                 }
-        } catch (e: Exception) {
-            android.util.Log.e("FaceProcessor", "getEmbedding error: ${e.message}", e)
-            promise.reject("ERROR", "getEmbedding failed: ${e.message}", e)
+        } catch (e: Throwable) {
+            promise.reject("ERROR", e.message)
         }
     }
 }

@@ -23,8 +23,11 @@ export function l2Normalize(embedding: number[]): number[] {
   return embedding.map(v => v / norm);
 }
 
-export const MATCH_THRESHOLD = 0.45;
-export const DUPLICATE_THRESHOLD = 0.75;
+// Calibrated for the eye-aligned landmark geometry embedding.
+// Same person across captures scores very high (~0.93+); the threshold
+// admits pose/expression variation while still separating distinct people.
+export const MATCH_THRESHOLD = 0.80;
+export const DUPLICATE_THRESHOLD = 0.88;
 
 export function checkDuplicateEnrollment(
   newEmbedding: number[],
@@ -98,8 +101,14 @@ export function prepareEmbeddingForStorage(embedding: number[]): {
   hash: string;
   salt: string;
 } {
-  const privatized = addDifferentialPrivacy(embedding);
+  // IMPORTANT: store the CLEAN, L2-normalized embedding for matching.
+  // Differential-privacy noise (scale ~0.33 per dim) on a unit vector
+  // completely destroys cosine similarity and breaks both matching and
+  // duplicate detection. The cancellable-template privacy guarantee is
+  // provided by the BioHash (ISO/IEC 24745) below, not by corrupting the
+  // matching vector. DP remains available as an opt-in transform.
+  const clean = l2Normalize(embedding);
   const salt = generateSalt();
-  const hash = bioHash(embedding, salt);
-  return { embedding: privatized, hash, salt };
+  const hash = bioHash(clean, salt);
+  return { embedding: clean, hash, salt };
 }

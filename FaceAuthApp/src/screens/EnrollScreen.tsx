@@ -6,7 +6,7 @@ import {
 import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
-import { detectFace, getFaceEmbedding } from '../services/faceProcessor';
+import { detectFace, getFaceEmbeddingWithMethod } from '../services/faceProcessor';
 import { saveUser, getEnrolledUsers } from '../services/database';
 import { checkDuplicateEnrollment, prepareEmbeddingForStorage, MATCH_THRESHOLD, DUPLICATE_THRESHOLD } from '../services/embeddingUtils';
 import { checkFaceQuality, getQualityFeedback } from '../services/qualityGate';
@@ -39,6 +39,8 @@ export default function EnrollScreen({ navigation, route }: Props) {
   const [modelReady, setModelReady] = useState(false);
   const [embeddingDims, setEmbeddingDims] = useState(0);
   const [processTimeMs, setProcessTimeMs] = useState(0);
+
+  const [modelMethod, setModelMethod] = useState('');
 
   useEffect(() => {
     if (!NativeModules.FaceProcessor) {
@@ -73,9 +75,13 @@ export default function EnrollScreen({ navigation, route }: Props) {
         setProcessing(false); return;
       }
 
-      setFaceStatus('LOADING MODEL & GENERATING EMBEDDING...');
+      setFaceStatus('GENERATING EMBEDDING...');
       let emb: number[];
-      try { emb = await getFaceEmbedding(filePath); } catch (e: any) {
+      try {
+        const embResult = await getFaceEmbeddingWithMethod(filePath);
+        emb = embResult.embedding;
+        setModelMethod(embResult.method);
+      } catch (e: any) {
         Alert.alert('EMBEDDING ERROR', e?.message || 'Unknown');
         setProcessing(false); setFaceStatus('FAILED — RETRY'); return;
       }
@@ -140,7 +146,7 @@ export default function EnrollScreen({ navigation, route }: Props) {
       <Text style={[s.doneTitle, { color: colors.success }]}>ENROLLED</Text>
       <Text style={s.doneName}>{name}</Text>
       <View style={s.doneStats}>
-        <Text style={s.doneStat}>{embeddingDims}D embedding | {processTimeMs}ms | BioHash secured</Text>
+        <Text style={s.doneStat}>{embeddingDims}D {modelMethod || 'embedding'} | {processTimeMs}ms | BioHash secured</Text>
       </View>
       <View style={s.tagRow}>
         {[
@@ -209,7 +215,11 @@ export default function EnrollScreen({ navigation, route }: Props) {
         <View style={s.modelStatus}>
           <View style={[s.modelDot, { backgroundColor: modelReady ? colors.success : colors.warn }]} />
           <Text style={s.modelText}>
-            {modelReady ? 'MobileFaceNet INT8 Ready' : 'Loading model...'}
+            {modelReady
+              ? modelMethod === 'landmark' ? 'ML Kit Landmark Ready'
+              : modelMethod === 'onnx' ? 'MobileFaceNet ONNX Ready'
+              : 'Face Engine Ready'
+              : 'Loading...'}
           </Text>
         </View>
       </View>

@@ -43,6 +43,11 @@ export async function detectFace(imagePath: string): Promise<FaceDetectionResult
   }
 }
 
+export type EmbeddingResult = {
+  embedding: number[];
+  method: 'onnx' | 'landmark';
+};
+
 export async function getFaceEmbedding(imagePath: string): Promise<number[]> {
   if (!FaceProcessor || typeof FaceProcessor.getEmbedding !== 'function') {
     throw new Error('FaceProcessor native module not available. Reinstall the app.');
@@ -50,6 +55,21 @@ export async function getFaceEmbedding(imagePath: string): Promise<number[]> {
   const result = await FaceProcessor.getEmbedding(imagePath);
   if (result && result.embedding) {
     return result.embedding as number[];
+  }
+  throw new Error('getEmbedding returned no embedding data');
+}
+
+/** Same as getFaceEmbedding but also returns which method was used */
+export async function getFaceEmbeddingWithMethod(imagePath: string): Promise<EmbeddingResult> {
+  if (!FaceProcessor || typeof FaceProcessor.getEmbedding !== 'function') {
+    throw new Error('FaceProcessor native module not available. Reinstall the app.');
+  }
+  const result = await FaceProcessor.getEmbedding(imagePath);
+  if (result && result.embedding) {
+    return {
+      embedding: result.embedding as number[],
+      method: result.method === 'onnx' ? 'onnx' : 'landmark',
+    };
   }
   throw new Error('getEmbedding returned no embedding data');
 }
