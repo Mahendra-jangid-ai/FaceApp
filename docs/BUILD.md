@@ -34,8 +34,8 @@ $env:Path += ";$env:ANDROID_HOME\platform-tools"
 ## 2. Clone &amp; install
 
 ```bash
-git clone https://github.com/Eartherai/nhai-face-auth.git
-cd nhai-face-auth/FaceAuthApp
+git clone https://github.com/Eartherai/FaceAuthApp.git
+cd FaceAuthApp
 npm install
 ```
 

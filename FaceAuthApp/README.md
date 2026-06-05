@@ -199,6 +199,6 @@ FaceAuthApp/
 **NHAI Face Auth** — National Highways Authority of India · Hackathon 7.0
 *Custom MobileFaceNet (99.28% LFW) · Offline-first · Privacy by design*
 
-🌐 **Live page:** enable GitHub Pages on `/docs` → `https://Eartherai.github.io/nhai-face-auth/`
+🌐 **Live page:** enable GitHub Pages on `/docs` → `https://Eartherai.github.io/FaceAuthApp/`
 
 </div>

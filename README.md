@@ -14,7 +14,7 @@
 [![Platform](https://img.shields.io/badge/Android-React_Native_0.85-555?style=for-the-badge&logo=android)](FaceAuthApp)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
-**[🌐 Live Demo Page](https://Eartherai.github.io/nhai-face-auth/) · [📥 Download APK](../../releases/latest) · [📊 Pitch Deck](presentation/NHAI_FaceAuth_FINAL.pptx) · [🧠 Model](docs/MODEL.md) · [✨ Features](docs/FEATURES.md)**
+**[🌐 Live Demo Page](https://Eartherai.github.io/FaceAuthApp/) · [📥 Download APK](../../releases/latest) · [📊 Pitch Deck](presentation/NHAI_FaceAuth_FINAL.pptx) · [🧠 Model](docs/MODEL.md) · [✨ Features](docs/FEATURES.md)**
 
 </div>
 
@@ -161,8 +161,8 @@ Full details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · Threat model: [`
 | NDK | as pinned by RN 0.85 |
 
 ```bash
-git clone https://github.com/Eartherai/nhai-face-auth.git
-cd nhai-face-auth/FaceAuthApp
+git clone https://github.com/Eartherai/FaceAuthApp.git
+cd FaceAuthApp
 npm install
 
 # Build a standalone debug APK (bundles JS + ML models — no Metro/server needed)
@@ -201,7 +201,7 @@ Full methodology and results: [`docs/MODEL.md`](docs/MODEL.md).
 ## 📂 Project Structure
 
 ```
-nhai-face-auth/
+FaceAuthApp/
 ├─ README.md                     ← you are here
 ├─ LICENSE                       (MIT)
 ├─ docs/                         GitHub Pages site + documentation
