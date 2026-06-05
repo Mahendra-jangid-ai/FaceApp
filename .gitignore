@@ -1,0 +1,50 @@
+# ── Dependencies ─────────────────────────────────────────────
+node_modules/
+
+# ── Build outputs ────────────────────────────────────────────
+**/build/
+**/.gradle/
+**/.cxx/
+*.apk
+*.aab
+local.properties
+
+# ── Large binaries & submission bundles ──────────────────────
+# (ship the APK via GitHub Releases, not in the repo — > 100 MB limit)
+/*.apk
+/*.aab
+/*.zip
+
+# ── Stray test / debug artifacts at repo root ────────────────
+/*.xml
+/logcat_full.txt
+/screenshot_*.png
+/screen_*.png
+/test_*.png
+/emu*.png
+/enrol_state.png
+/ui*.xml
+/*.txt
+
+# ── Duplicate / raw assets (canonical copies live in FaceAuthApp/) ─
+/artifacts/
+/notebookd51b86a5b7.ipynb
+
+# ── Presentation tooling (keep root /presentation .pptx, drop build deps) ─
+presentation/node_modules/
+presentation/package-lock.json
+# Build workspace + superseded decks (canonical deck lives in /presentation)
+FaceAuthApp/presentation/
+FaceAuthApp/FaceAuth_Presentation.pptx
+
+# ── Editor / OS / tooling ────────────────────────────────────
+.claude/
+.DS_Store
+Thumbs.db
+*.log
+
+# ── Keep these (negate ignores) ──────────────────────────────
+!docs/screenshots/*.png
+!docs/nhai_logo.png
+!FaceAuthApp/artifacts/*.onnx
+!FaceAuthApp/artifacts/*.pt
