@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PermissionsAndroid, Platform } from 'react-native';
-import type { WorkSite } from '../types';
+import type { WorkSite, AssignedLocation } from '../types';
 
 // React Native provides navigator.geolocation at runtime
 declare const navigator: {
@@ -31,7 +31,8 @@ export async function deleteWorkSite(id: string): Promise<void> {
   await AsyncStorage.setItem(SITES_KEY, JSON.stringify(sites.filter(s => s.id !== id)));
 }
 
-function haversineDistance(
+/** Haversine distance in meters between two GPS coordinates */
+export function haversineDistance(
   lat1: number, lon1: number,
   lat2: number, lon2: number,
 ): number {
@@ -45,16 +46,53 @@ function haversineDistance(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/**
+ * Returns a compass direction from origin → target
+ * e.g. "North-East", "South", "West"
+ */
+export function getCompassDirection(
+  fromLat: number, fromLon: number,
+  toLat: number, toLon: number,
+): string {
+  const dLat = toLat - fromLat;
+  const dLon = toLon - fromLon;
+
+  let angle = Math.atan2(dLon, dLat) * (180 / Math.PI);
+  if (angle < 0) angle += 360;
+
+  if (angle < 22.5 || angle >= 337.5)  return 'North';
+  if (angle < 67.5)                     return 'North-East';
+  if (angle < 112.5)                    return 'East';
+  if (angle < 157.5)                    return 'South-East';
+  if (angle < 202.5)                    return 'South';
+  if (angle < 247.5)                    return 'South-West';
+  if (angle < 292.5)                    return 'West';
+  return 'North-West';
+}
+
+export async function requestLocationPermission(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      {
+        title: 'Location Permission Required',
+        message: 'NHAI FaceAuth needs your location to verify you are at your assigned work site.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      },
+    );
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+  }
+  return true; // iOS handles permissions via Info.plist
+}
+
 export async function getCurrentLocation(): Promise<{ latitude: number; longitude: number } | null> {
   try {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      if (granted !== PermissionsAndroid.RESULTS.GRANTED) return null;
-    }
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) return null;
+
     return new Promise(resolve => {
-      const timeout = setTimeout(() => resolve(null), 8000);
+      const timeout = setTimeout(() => resolve(null), 10000);
       navigator.geolocation.getCurrentPosition(
         pos => {
           clearTimeout(timeout);
@@ -64,7 +102,7 @@ export async function getCurrentLocation(): Promise<{ latitude: number; longitud
           clearTimeout(timeout);
           resolve(null);
         },
-        { enableHighAccuracy: true, timeout: 7000, maximumAge: 30000 },
+        { enableHighAccuracy: true, timeout: 9000, maximumAge: 10000 },
       );
     });
   } catch {
@@ -79,6 +117,7 @@ export interface GeofenceCheck {
   location: { latitude: number; longitude: number } | null;
 }
 
+/** Check against global work sites (used for general site geofencing) */
 export async function checkGeofence(): Promise<GeofenceCheck> {
   const location = await getCurrentLocation();
   if (!location) {
@@ -108,5 +147,62 @@ export async function checkGeofence(): Promise<GeofenceCheck> {
     nearestSite: nearest,
     distanceMeters: Math.round(minDist),
     location,
+  };
+}
+
+export interface WorkerGeofenceResult {
+  /** Whether the GPS fix was successful */
+  gpsAcquired: boolean;
+  /** True if worker is within their assignedLocation radius */
+  withinZone: boolean;
+  /** Distance in meters from assigned location */
+  distanceMeters: number;
+  /** Compass direction the worker should move toward to enter zone */
+  directionToZone: string;
+  /** Worker's current GPS coordinates */
+  workerLocation: { latitude: number; longitude: number } | null;
+  /** The assigned location used for the check */
+  assignedLocation: AssignedLocation;
+}
+
+/**
+ * Per-worker location check: verifies the worker is within their
+ * personally assigned work location radius (set during enrollment).
+ *
+ * @param assignedLocation - The worker's assigned location from EnrolledUser.assignedLocation
+ */
+export async function checkWorkerAssignedLocation(
+  assignedLocation: AssignedLocation,
+): Promise<WorkerGeofenceResult> {
+  const location = await getCurrentLocation();
+
+  if (!location) {
+    return {
+      gpsAcquired: false,
+      withinZone: false,
+      distanceMeters: Infinity,
+      directionToZone: '—',
+      workerLocation: null,
+      assignedLocation,
+    };
+  }
+
+  const distance = haversineDistance(
+    location.latitude, location.longitude,
+    assignedLocation.latitude, assignedLocation.longitude,
+  );
+
+  const direction = getCompassDirection(
+    location.latitude, location.longitude,
+    assignedLocation.latitude, assignedLocation.longitude,
+  );
+
+  return {
+    gpsAcquired: true,
+    withinZone: distance <= assignedLocation.radiusMeters,
+    distanceMeters: Math.round(distance),
+    directionToZone: direction,
+    workerLocation: location,
+    assignedLocation,
   };
 }

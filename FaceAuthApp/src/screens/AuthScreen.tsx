@@ -15,8 +15,9 @@ import { colors, spacing, borderRadius, typography, shadows, MONO } from '../the
 import { detectFace, getFaceEmbeddingWithMethod } from '../services/faceProcessor';
 import { findBestMatch, MATCH_THRESHOLD } from '../services/embeddingUtils';
 import { getEnrolledUsers, saveAuthLog, getOpenCheckIn, saveAttendance, updateAttendance } from '../services/database';
-import { checkGeofence, type GeofenceCheck } from '../services/geofencing';
-import type { RootStackParamList, FaceDetectionResult } from '../types';
+import { checkGeofence, checkWorkerAssignedLocation, type GeofenceCheck } from '../services/geofencing';
+import type { RootStackParamList, FaceDetectionResult, EnrolledUser } from '../types';
+
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Authenticate'>;
 type ChallengeType = 'blink' | 'smile' | 'turnLeft' | 'turnRight';
@@ -117,6 +118,14 @@ export default function AuthScreen({ navigation }: Props) {
   const [bioHashOk, setBioHashOk] = useState(false);
   const [challengeProgress, setChallengeProgress] = useState(0);
   const [faceFound, setFaceFound] = useState(false);
+  // Worker location boundary check result
+  const [locationBlockedInfo, setLocationBlockedInfo] = useState<{
+    distanceMeters: number;
+    direction: string;
+    radius: number;
+    siteName: string;
+  } | null>(null);
+
 
   const challengeIndexRef = useRef(0);
   const runningRef   = useRef(false);
@@ -294,21 +303,63 @@ export default function AuthScreen({ navigation }: Props) {
         setMatchName(match.name);
         setMatchScore(match.score);
         setBioHashOk(match.bioHashVerified);
+        failCountRef.current = 0;
+
+        // ── Per-worker location boundary check ──────────────────────────
+        const matchedUser = users.find(u => u.id === match.id);
+        if (matchedUser?.assignedLocation) {
+          setStatusText('Verifying work zone GPS…');
+          const zoneCheck = await checkWorkerAssignedLocation(matchedUser.assignedLocation);
+
+          if (!zoneCheck.gpsAcquired) {
+            // GPS failed entirely — block attendance (GPS is mandatory)
+            setStep('locationblocked' as any);
+            setLocationBlockedInfo({
+              distanceMeters: -1, // signals GPS unavailable
+              direction: '—',
+              radius: matchedUser.assignedLocation.radiusMeters,
+              siteName: matchedUser.assignedLocation.label,
+            });
+            await saveAuthLog({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), userId: match.id, userName: match.name, timestamp: Date.now(), livenessPassed: true, matchScore: match.score, authenticated: false, synced: false, latitude: null, longitude: null, spoofScore, withinGeofence: false, bioHashVerified: match.bioHashVerified, pipelineLatencyMs: Date.now() - t0 });
+            return;
+          }
+
+          if (!zoneCheck.withinZone) {
+            // Worker is outside their assigned zone — block and show distance
+            setStep('locationblocked' as any);
+            setLocationBlockedInfo({
+              distanceMeters: zoneCheck.distanceMeters,
+              direction: zoneCheck.directionToZone,
+              radius: matchedUser.assignedLocation.radiusMeters,
+              siteName: matchedUser.assignedLocation.label,
+            });
+            safeVibrate([0, 300, 100, 300]);
+            await saveAuthLog({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), userId: match.id, userName: match.name, timestamp: Date.now(), livenessPassed: true, matchScore: match.score, authenticated: false, synced: false, latitude: zoneCheck.workerLocation?.latitude ?? null, longitude: zoneCheck.workerLocation?.longitude ?? null, spoofScore, withinGeofence: false, bioHashVerified: match.bioHashVerified, pipelineLatencyMs: Date.now() - t0 });
+            return;
+          }
+
+          // Worker is within zone — mark attendance
+          if (zoneCheck.workerLocation) {
+            setGeoInfo(`📍 ${matchedUser.assignedLocation.label} (${zoneCheck.distanceMeters}m away)`);
+            geo.location = zoneCheck.workerLocation;
+            geo.withinGeofence = true;
+          }
+        }
+        // ── End location check ──────────────────────────────────────────
+
         setStep('success');
         safeVibrate([0, 100, 100, 100]);
-        failCountRef.current = 0;
         try {
           await saveAuthLog({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), userId: match.id, userName: match.name, timestamp: Date.now(), livenessPassed: true, matchScore: match.score, authenticated: true, synced: false, latitude: geo.location?.latitude ?? null, longitude: geo.location?.longitude ?? null, spoofScore, siteId: geo.nearestSite?.id ?? null, siteName: geo.nearestSite?.name ?? null, withinGeofence: geo.withinGeofence, bioHashVerified: match.bioHashVerified, pipelineLatencyMs: Date.now() - t0 });
         } catch {}
         try {
-          const matchedUser = users.find(u => u.id === match.id);
           if (matchedUser) {
             const open = await getOpenCheckIn(match.id);
             if (open) {
               await updateAttendance(open.id, { checkOutTime: Date.now(), checkOutLocation: geo.location, checkOutScore: match.score });
               setAttendanceAction('Check-out Recorded');
             } else {
-              await saveAttendance({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), userId: match.id, userName: match.name, employeeId: matchedUser.employeeId, siteId: geo.nearestSite?.id ?? null, siteName: geo.nearestSite?.name ?? null, checkInTime: Date.now(), checkOutTime: null, checkInLocation: geo.location, checkOutLocation: null, checkInScore: match.score, checkOutScore: null, withinGeofence: geo.withinGeofence, synced: false });
+              await saveAttendance({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), userId: match.id, userName: match.name, employeeId: matchedUser.employeeId, siteId: geo.nearestSite?.id ?? null, siteName: matchedUser?.assignedLocation?.label ?? geo.nearestSite?.name ?? null, checkInTime: Date.now(), checkOutTime: null, checkInLocation: geo.location, checkOutLocation: null, checkInScore: match.score, checkOutScore: null, withinGeofence: geo.withinGeofence, synced: false });
               setAttendanceAction('Check-in Recorded');
             }
           }
@@ -316,6 +367,7 @@ export default function AuthScreen({ navigation }: Props) {
       } else { await handleFail(); }
     } catch { await handleFail(); }
   }, [handleFail, photoOutput]);
+
 
   /* ══════════════  RENDER  ══════════════════════════════════════════ */
 
@@ -417,6 +469,84 @@ export default function AuthScreen({ navigation }: Props) {
         <Text style={s.monoText}>Too many failed attempts. Please wait.</Text>
         <Text style={[s.lockTimer, { color: colors.danger }]}>{lockCountdown}s</Text>
         <TouchableOpacity style={[s.btnOutline, { marginTop: spacing.xl }]} onPress={() => navigation.goBack()} activeOpacity={0.85}>
+          <Text style={s.btnOutlineText}>Back to Home</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  /* ── LOCATION BLOCKED ────────────────────────────────────────────── */
+  if ((step as string) === 'locationblocked' && locationBlockedInfo) {
+    const gpsUnavailable = locationBlockedInfo.distanceMeters === -1;
+    return (
+      <View style={s.center}>
+        {/* Icon */}
+        <View style={[s.resultCircle, { borderColor: colors.warn, backgroundColor: colors.warnDim }]}>
+          <Text style={[s.resultGlyph, { fontSize: 30 }]}>📍</Text>
+        </View>
+
+        <Text style={[s.resultTitle, { color: colors.warn }]}>
+          {gpsUnavailable ? 'GPS Not Available' : 'Outside Work Zone'}
+        </Text>
+
+        {gpsUnavailable ? (
+          <>
+            <Text style={s.monoText}>Could not get your GPS location.</Text>
+            <Text style={[s.monoText, { marginTop: 4 }]}>
+              GPS is required to verify work zone attendance.
+            </Text>
+          </>
+        ) : (
+          <>
+            {/* Distance Display */}
+            <View style={s.distanceCard}>
+              <Text style={s.distanceNum}>{locationBlockedInfo.distanceMeters}m</Text>
+              <Text style={s.distanceLabel}>from your assigned work zone</Text>
+            </View>
+
+            {/* Zone info */}
+            <View style={s.zoneInfoCard}>
+              <Text style={s.zoneInfoTitle}>📌 Assigned Zone</Text>
+              <Text style={s.zoneInfoSite}>{locationBlockedInfo.siteName}</Text>
+              <Text style={s.zoneInfoRadius}>
+                Must be within <Text style={{ fontWeight: '800', color: colors.accent }}>{locationBlockedInfo.radius}m</Text> to mark attendance
+              </Text>
+            </View>
+
+            {/* Direction arrow */}
+            <View style={s.directionCard}>
+              <Text style={s.directionLabel}>Move towards</Text>
+              <Text style={s.directionArrow}>
+                {locationBlockedInfo.direction === 'North' ? '↑' :
+                 locationBlockedInfo.direction === 'South' ? '↓' :
+                 locationBlockedInfo.direction === 'East'  ? '→' :
+                 locationBlockedInfo.direction === 'West'  ? '←' :
+                 locationBlockedInfo.direction === 'North-East' ? '↗' :
+                 locationBlockedInfo.direction === 'South-East' ? '↘' :
+                 locationBlockedInfo.direction === 'South-West' ? '↙' :
+                 locationBlockedInfo.direction === 'North-West' ? '↖' : '●'}
+              </Text>
+              <Text style={s.directionName}>{locationBlockedInfo.direction}</Text>
+              <Text style={s.directionNeed}>
+                Need to move ~{Math.max(0, locationBlockedInfo.distanceMeters - locationBlockedInfo.radius)}m closer
+              </Text>
+            </View>
+          </>
+        )}
+
+        <TouchableOpacity
+          style={[s.btn, { marginTop: spacing.xl, backgroundColor: colors.warn }]}
+          onPress={() => {
+            setStep('ready');
+            setLocationBlockedInfo(null);
+            challengeIndexRef.current = 0;
+            setCompletedCount(0);
+          }}
+          activeOpacity={0.85}>
+          <Text style={s.btnText}>Try Again</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[s.btnOutline, { marginTop: spacing.md }]} onPress={() => navigation.goBack()} activeOpacity={0.85}>
           <Text style={s.btnOutlineText}>Back to Home</Text>
         </TouchableOpacity>
       </View>

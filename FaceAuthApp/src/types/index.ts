@@ -1,3 +1,10 @@
+export interface AssignedLocation {
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;   // Admin sets this: 50, 100, 200, or 500m
+  label: string;          // e.g. "NHAI Highway Site 4A" or custom name
+}
+
 export interface EnrolledUser {
   id: string;
   name: string;
@@ -12,7 +19,9 @@ export interface EnrolledUser {
   role: 'admin' | 'worker';
   siteId?: string;
   privacyEpsilon?: number;
+  assignedLocation?: AssignedLocation; // Per-worker work location boundary
 }
+
 
 export interface AuthLog {
   id: string;
@@ -112,4 +121,9 @@ export type RootStackParamList = {
   WorkerList: undefined;
   Calendar: { userId?: string } | undefined;
   PPECheck: undefined;
+  LocationPicker: {
+    workerName: string;
+    onConfirm: (location: AssignedLocation) => void;
+  };
 };
+

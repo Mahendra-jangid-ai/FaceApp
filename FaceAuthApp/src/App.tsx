@@ -15,7 +15,9 @@ import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import WorkerListScreen from './screens/WorkerListScreen';
 import CalendarScreen from './screens/CalendarScreen';
 import PPECheckScreen from './screens/PPECheckScreen';
+import LocationPickerScreen from './screens/LocationPickerScreen';
 import type { RootStackParamList } from './types';
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -118,6 +120,11 @@ export default function App() {
           <Stack.Screen name="WorkerList" component={WorkerListScreen} options={{ title: 'Worker Directory' }} />
           <Stack.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Attendance Calendar' }} />
           <Stack.Screen name="PPECheck" component={PPECheckScreen} options={{ title: 'PPE Safety Check' }} />
+          <Stack.Screen
+            name="LocationPicker"
+            component={LocationPickerScreen}
+            options={{ title: 'Assign Work Location', presentation: 'modal' }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </ErrorBoundary>
