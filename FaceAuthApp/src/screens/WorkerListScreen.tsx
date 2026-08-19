@@ -52,12 +52,12 @@ export default function WorkerListScreen({ navigation }: Props) {
 
   const handleDelete = (user: EnrolledUser) => {
     Alert.alert(
-      'REMOVE WORKER',
-      `Delete ${user.name} (${user.employeeId}) from local biometric database?\n\nThis action cannot be undone.`,
+      'Remove Worker',
+      `Delete ${user.name} (${user.employeeId}) from local biometric database?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             await deleteUser(user.id);
@@ -82,21 +82,21 @@ export default function WorkerListScreen({ navigation }: Props) {
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={styles.name}>{item.name}</Text>
-          <View style={[styles.syncBadge, { backgroundColor: item.synced ? colors.successDim : colors.warnDim, borderColor: item.synced ? colors.success : colors.warn }]}>
+          <View style={[styles.syncBadge, { backgroundColor: item.synced ? colors.successDim : colors.warnDim, borderColor: item.synced ? '#BBF7D0' : '#FED7AA' }]}>
             <Text style={[styles.syncText, { color: item.synced ? colors.success : colors.warn }]}>
-              {item.synced ? 'SYNCED' : 'PENDING'}
+              {item.synced ? 'Synced' : 'Pending'}
             </Text>
           </View>
         </View>
         <Text style={styles.empId}>ID: {item.employeeId}</Text>
         {item.aadhar && (
-          <Text style={styles.aadhar}>AADHAAR: {maskAadhar(item.aadhar)}</Text>
+          <Text style={styles.aadhar}>Aadhaar: {maskAadhar(item.aadhar)}</Text>
         )}
         <View style={styles.metaRow}>
           <Text style={styles.meta}>Enrolled: {formatDate(item.createdAt)}</Text>
           {item.bioHash && (
             <View style={styles.secBadge}>
-              <Text style={styles.secBadgeText}>🛡️ BIOHASH SECURED</Text>
+              <Text style={styles.secBadgeText}>🔒 BioHash Protected</Text>
             </View>
           )}
         </View>
@@ -116,7 +116,7 @@ export default function WorkerListScreen({ navigation }: Props) {
         <View style={styles.countRow}>
           <Text style={styles.count}>{filtered.length}</Text>
           <Text style={styles.countLabel}>
-            {filtered.length === users.length ? 'REGISTERED WORKERS' : `OF ${users.length} TOTAL WORKERS`}
+            {filtered.length === users.length ? 'Workers' : `of ${users.length} Total Workers`}
           </Text>
         </View>
         <View style={styles.searchWrap}>
@@ -141,19 +141,17 @@ export default function WorkerListScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Enroll', { role: 'worker' })}
         activeOpacity={0.85}>
         <Text style={styles.addIcon}>＋</Text>
-        <Text style={styles.addText}>ENROL NEW WORKER</Text>
+        <Text style={styles.addText}>Enrol New Worker</Text>
       </TouchableOpacity>
 
       {filtered.length === 0 ? (
         <View style={styles.empty}>
-          <View style={styles.emptyBadge}>
-            <Text style={styles.emptyIcon}>👥</Text>
-          </View>
+          <Text style={styles.emptyIcon}>👥</Text>
           <Text style={styles.emptyText}>
-            {search ? 'No workers match your search query' : 'No personnel registered yet'}
+            {search ? 'No workers match your search' : 'No workers enrolled yet'}
           </Text>
           <Text style={styles.emptySubtext}>
-            Tap "Enrol New Worker" above to register facial biometric profiles.
+            Tap "Enrol New Worker" above to register biometric profiles.
           </Text>
         </View>
       ) : (
@@ -172,11 +170,11 @@ export default function WorkerListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    backgroundColor: colors.surface, padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line,
+    backgroundColor: '#FFFFFF', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   countRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, marginBottom: spacing.xs },
-  count: { fontSize: 24, fontWeight: '800', color: colors.accent, fontFamily: MONO },
-  countLabel: { ...typography.caption, letterSpacing: 1 },
+  count: { fontSize: 22, fontWeight: '800', color: colors.accent, fontFamily: MONO },
+  countLabel: { fontSize: 13, fontWeight: '600', color: colors.textDim },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt,
     borderRadius: borderRadius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line,
@@ -184,62 +182,56 @@ const styles = StyleSheet.create({
   },
   searchIcon: { fontSize: 13, marginRight: spacing.sm },
   searchInput: {
-    flex: 1, height: 40, fontSize: 13.5, color: colors.text, fontFamily: MONO,
+    flex: 1, height: 40, fontSize: 13.5, color: colors.text,
   },
   clearSearch: { fontSize: 14, color: colors.textDim, padding: spacing.xs },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.accent, margin: spacing.md,
     paddingVertical: spacing.md, borderRadius: borderRadius.md,
-    gap: spacing.sm, ...shadows.glowAccent,
+    gap: spacing.sm, ...shadows.sm,
   },
-  addIcon: { fontSize: 20, color: colors.onAccent, fontWeight: '800' },
-  addText: { ...typography.button, color: colors.onAccent, fontSize: 13 },
+  addIcon: { fontSize: 18, color: colors.onAccent, fontWeight: '700' },
+  addText: { ...typography.button, color: colors.onAccent, fontSize: 14 },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
-    flexDirection: 'row', backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg, padding: spacing.md,
+    flexDirection: 'row', backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.md, padding: spacing.md,
     marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
   avatar: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: colors.surfaceAlt, alignItems: 'center',
-    justifyContent: 'center', marginRight: spacing.md, borderWidth: 1, borderColor: colors.lineBright,
+    justifyContent: 'center', marginRight: spacing.md,
   },
-  avatarText: { fontSize: 18, fontWeight: '800', color: colors.accent },
+  avatarText: { fontSize: 17, fontWeight: '700', color: colors.accent },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  name: { ...typography.body, fontWeight: '700', fontSize: 14.5 },
-  empId: { fontFamily: MONO, fontSize: 11, color: colors.textDim, marginTop: 1 },
-  aadhar: { fontFamily: MONO, fontSize: 10.5, color: colors.textFaint, marginTop: 1 },
+  name: { fontSize: 14.5, fontWeight: '700', color: colors.text },
+  empId: { fontFamily: MONO, fontSize: 11.5, color: colors.textDim, marginTop: 1 },
+  aadhar: { fontSize: 11, color: colors.textFaint, marginTop: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },
-  meta: { fontFamily: MONO, fontSize: 10, color: colors.textFaint },
+  meta: { fontSize: 11, color: colors.textFaint },
   syncBadge: {
     paddingHorizontal: spacing.sm, paddingVertical: 2,
     borderRadius: borderRadius.xs, borderWidth: 1,
   },
-  syncText: { fontSize: 8.5, fontWeight: '800', letterSpacing: 0.5 },
+  syncText: { fontSize: 10, fontWeight: '700' },
   secBadge: {
     backgroundColor: colors.cyanDim, paddingHorizontal: spacing.sm,
-    paddingVertical: 2, borderRadius: borderRadius.xs, borderWidth: 1, borderColor: colors.cyan,
+    paddingVertical: 2, borderRadius: borderRadius.xs,
   },
-  secBadgeText: { fontSize: 8.5, fontWeight: '800', color: colors.cyan, letterSpacing: 0.5 },
+  secBadgeText: { fontSize: 10, fontWeight: '600', color: colors.cyan },
   deleteBtn: {
-    width: 34, height: 34, borderRadius: 17,
+    width: 32, height: 32, borderRadius: 16,
     backgroundColor: colors.surfaceAlt, alignItems: 'center',
     justifyContent: 'center', alignSelf: 'center', marginLeft: spacing.sm,
-    borderWidth: 1, borderColor: colors.line,
   },
   deleteIcon: { fontSize: 14 },
   empty: {
     flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl,
   },
-  emptyBadge: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: colors.line,
-  },
-  emptyIcon: { fontSize: 32 },
-  emptyText: { ...typography.h3, marginTop: spacing.md, textAlign: 'center' },
-  emptySubtext: { ...typography.bodySmall, marginTop: spacing.xs, textAlign: 'center', maxWidth: 260 },
+  emptyIcon: { fontSize: 36, marginBottom: spacing.sm },
+  emptyText: { fontSize: 15, fontWeight: '700', color: colors.text },
+  emptySubtext: { fontSize: 12, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center', maxWidth: 260 },
 });

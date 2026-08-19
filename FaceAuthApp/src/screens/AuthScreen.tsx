@@ -8,7 +8,6 @@ import {
   Alert,
   Animated,
   Vibration,
-  Platform,
 } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -29,10 +28,10 @@ interface Challenge {
 }
 
 const ALL_CHALLENGES: Challenge[] = [
-  { type: 'blink',     instruction: 'Blink eyes naturally',    glyph: '◉' },
-  { type: 'smile',     instruction: 'Give a slight smile',     glyph: '◡' },
-  { type: 'turnLeft',  instruction: 'Turn head slowly left',   glyph: '◂' },
-  { type: 'turnRight', instruction: 'Turn head slowly right',  glyph: '▸' },
+  { type: 'blink',     instruction: 'Blink your eyes',        glyph: '◉' },
+  { type: 'smile',     instruction: 'Smile at the camera',    glyph: '◡' },
+  { type: 'turnLeft',  instruction: 'Turn head slightly left', glyph: '◂' },
+  { type: 'turnRight', instruction: 'Turn head slightly right',glyph: '▸' },
 ];
 
 function pickChallenges(): Challenge[] {
@@ -263,15 +262,15 @@ export default function AuthScreen({ navigation }: Props) {
   const handleRecognition = useCallback(async () => {
     const t0 = Date.now();
     setStep('recognizing');
-    setStatusText('Verifying GPS geofence…');
+    setStatusText('Checking GPS geofence…');
 
     let geo: GeofenceCheck = { withinGeofence: false, nearestSite: null, distanceMeters: null, location: null };
     try {
       geo = await checkGeofence();
-      if (geo.nearestSite) setGeoInfo(geo.withinGeofence ? `📍 ${geo.nearestSite.name}` : `📍 ${geo.distanceMeters}m outside site boundary`);
+      if (geo.nearestSite) setGeoInfo(geo.withinGeofence ? `📍 ${geo.nearestSite.name}` : `📍 ${geo.distanceMeters}m from site`);
     } catch {}
 
-    setStatusText('Anti-spoof Laplacian scan…');
+    setStatusText('Anti-spoof check…');
     try {
       if (!photoOutput) throw new Error('Camera not ready');
       const photoFile = await photoOutput.capturePhotoToFile({ flashMode: 'off' }, {});
@@ -279,14 +278,14 @@ export default function AuthScreen({ navigation }: Props) {
       const faceResult = await detectFace(filePath);
       const spoofScore = faceResult.spoofScore ?? 0.5;
       setSpoofScoreVal(spoofScore);
-      if (spoofScore < 0.3) { Alert.alert('Spoof Alert', 'Spoof detected. Please authenticate with your real face.'); await handleFail(); return; }
+      if (spoofScore < 0.3) { Alert.alert('Spoof Alert', 'Spoof detected. Please face camera naturally.'); await handleFail(); return; }
 
-      setStatusText('Vectorizing & matching template…');
+      setStatusText('Matching face template…');
       let emb: number[];
       let method: 'onnx' | 'landmark' = 'onnx';
       try { const r = await getFaceEmbeddingWithMethod(filePath); emb = r.embedding; method = r.method; } catch { await handleFail(); return; }
       const users = await getEnrolledUsers();
-      if (users.length === 0) { Alert.alert('No Profiles', 'No enrolled workers found. Enrol someone first.'); await handleFail(); return; }
+      if (users.length === 0) { Alert.alert('No Workers', 'No enrolled workers found.'); await handleFail(); return; }
 
       const match = findBestMatch(emb, users.map(u => ({ id: u.id, name: u.name, embedding: u.embedding, bioHash: u.bioHash, bioHashSalt: u.bioHashSalt })), method);
       setPipelineMs(Date.now() - t0);
@@ -307,10 +306,10 @@ export default function AuthScreen({ navigation }: Props) {
             const open = await getOpenCheckIn(match.id);
             if (open) {
               await updateAttendance(open.id, { checkOutTime: Date.now(), checkOutLocation: geo.location, checkOutScore: match.score });
-              setAttendanceAction('PUNCHED OUT (CHECK-OUT RECORDED)');
+              setAttendanceAction('Check-out Recorded');
             } else {
               await saveAttendance({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), userId: match.id, userName: match.name, employeeId: matchedUser.employeeId, siteId: geo.nearestSite?.id ?? null, siteName: geo.nearestSite?.name ?? null, checkInTime: Date.now(), checkOutTime: null, checkInLocation: geo.location, checkOutLocation: null, checkInScore: match.score, checkOutScore: null, withinGeofence: geo.withinGeofence, synced: false });
-              setAttendanceAction('PUNCHED IN (CHECK-IN RECORDED)');
+              setAttendanceAction('Check-in Recorded');
             }
           }
         } catch {}
@@ -323,32 +322,30 @@ export default function AuthScreen({ navigation }: Props) {
   if (!hasPermission) {
     return (
       <View style={s.center}>
-        <View style={s.permCircle}>
-          <Text style={s.permIcon}>📷</Text>
-        </View>
-        <Text style={s.centerTitle}>CAMERA ACCESS REQUIRED</Text>
+        <Text style={s.permIcon}>📷</Text>
+        <Text style={s.centerTitle}>Camera Permission Required</Text>
         <TouchableOpacity style={s.btn} onPress={requestPermission} activeOpacity={0.85}>
-          <Text style={s.btnText}>GRANT PERMISSION</Text>
+          <Text style={s.btnText}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
     );
   }
-  if (!device) return <View style={s.center}><Text style={s.centerTitle}>NO CAMERA FOUND</Text></View>;
+  if (!device) return <View style={s.center}><Text style={s.centerTitle}>No camera found</Text></View>;
 
   /* ── SUCCESS ─────────────────────────────────────────────────────── */
   if (step === 'success') {
     const scoreColor = matchScore > 0.7 ? colors.success : matchScore > 0.5 ? colors.warn : colors.danger;
     return (
-      <View style={[s.center, { backgroundColor: '#061710' }]}>
+      <View style={s.center}>
         <View style={[s.resultCircle, { borderColor: colors.success, backgroundColor: colors.successDim }]}>
           <Text style={[s.resultGlyph, { color: colors.success }]}>✓</Text>
         </View>
-        <Text style={[s.resultTitle, { color: colors.success }]}>VERIFIED & AUTHENTICATED</Text>
+        <Text style={[s.resultTitle, { color: colors.success }]}>Verification Successful</Text>
         <Text style={s.resultName}>{matchName}</Text>
 
         <View style={s.scoreSection}>
           <View style={s.scoreRow}>
-            <Text style={s.scoreLabel}>MATCH CONFIDENCE</Text>
+            <Text style={s.scoreLabel}>Match Confidence</Text>
             <Text style={[s.scoreValue, { color: scoreColor }]}>{(matchScore * 100).toFixed(1)}%</Text>
           </View>
           <View style={s.scoreBarBg}>
@@ -357,28 +354,19 @@ export default function AuthScreen({ navigation }: Props) {
           </View>
           <View style={s.scoreRow}>
             <Text style={s.scoreHint}>Threshold: {(MATCH_THRESHOLD * 100).toFixed(0)}%</Text>
-            <Text style={s.scoreHint}>Latency: {pipelineMs}ms</Text>
+            <Text style={s.scoreHint}>{pipelineMs}ms latency</Text>
           </View>
         </View>
 
         <View style={s.verifyGrid}>
-          <View style={[s.verifyBadge, { borderColor: colors.success, backgroundColor: colors.successDim }]}>
-            <Text style={[s.verifyIcon, { color: colors.success }]}>✓</Text>
-            <Text style={[s.verifyText, { color: colors.success }]}>LIVENESS PASSED</Text>
+          <View style={[s.verifyBadge, { backgroundColor: colors.successDim, borderColor: '#BBF7D0' }]}>
+            <Text style={[s.verifyText, { color: colors.success }]}>✓ Liveness Passed</Text>
           </View>
-          <View style={[s.verifyBadge, { borderColor: spoofScoreVal > 0.4 ? colors.success : colors.warn, backgroundColor: colors.surfaceAlt }]}>
-            <Text style={[s.verifyIcon, { color: spoofScoreVal > 0.4 ? colors.success : colors.warn }]}>
-              {spoofScoreVal > 0.4 ? '✓' : '~'}
-            </Text>
-            <Text style={[s.verifyText, { color: spoofScoreVal > 0.4 ? colors.success : colors.warn }]}>
-              ANTI-SPOOF {(spoofScoreVal * 100).toFixed(0)}%
-            </Text>
+          <View style={[s.verifyBadge, { backgroundColor: colors.surfaceAlt, borderColor: colors.line }]}>
+            <Text style={s.verifyText}>Anti-Spoof: {(spoofScoreVal * 100).toFixed(0)}%</Text>
           </View>
-          <View style={[s.verifyBadge, { borderColor: bioHashOk ? colors.cyan : colors.textFaint, backgroundColor: colors.surfaceAlt }]}>
-            <Text style={[s.verifyIcon, { color: bioHashOk ? colors.cyan : colors.textFaint }]}>
-              {bioHashOk ? '✓' : '-'}
-            </Text>
-            <Text style={[s.verifyText, { color: bioHashOk ? colors.cyan : colors.textFaint }]}>BIOHASH OK</Text>
+          <View style={[s.verifyBadge, { backgroundColor: colors.cyanDim, borderColor: '#BAE6FD' }]}>
+            <Text style={[s.verifyText, { color: colors.cyan }]}>BioHash Verified</Text>
           </View>
         </View>
 
@@ -390,7 +378,7 @@ export default function AuthScreen({ navigation }: Props) {
         {geoInfo !== '' && <Text style={s.geoText}>{geoInfo}</Text>}
 
         <TouchableOpacity style={[s.btn, { marginTop: spacing.xl }]} onPress={() => navigation.goBack()} activeOpacity={0.85}>
-          <Text style={s.btnText}>FINISH & RETURN</Text>
+          <Text style={s.btnText}>Done</Text>
         </TouchableOpacity>
       </View>
     );
@@ -399,20 +387,20 @@ export default function AuthScreen({ navigation }: Props) {
   /* ── FAILURE ─────────────────────────────────────────────────────── */
   if (step === 'failure') {
     return (
-      <View style={[s.center, { backgroundColor: '#1A080C' }]}>
+      <View style={s.center}>
         <View style={[s.resultCircle, { borderColor: colors.danger, backgroundColor: colors.dangerDim }]}>
           <Text style={[s.resultGlyph, { color: colors.danger }]}>✕</Text>
         </View>
-        <Text style={[s.resultTitle, { color: colors.danger }]}>AUTHENTICATION FAILED</Text>
-        <Text style={s.monoText}>Face did not match any enrolled personnel</Text>
+        <Text style={[s.resultTitle, { color: colors.danger }]}>Authentication Failed</Text>
+        <Text style={s.monoText}>Face did not match registered worker profiles.</Text>
         <Text style={[s.monoText, { color: colors.warn, marginTop: spacing.xs }]}>
-          Attempt {failCountRef.current} of {MAX_FAILURES} before temporary lockout
+          Attempt {failCountRef.current} of {MAX_FAILURES}
         </Text>
         <TouchableOpacity style={[s.btn, { marginTop: spacing.xl }]} onPress={() => { setStep('ready'); challengeIndexRef.current = 0; setCompletedCount(0); }} activeOpacity={0.85}>
-          <Text style={s.btnText}>TRY SCAN AGAIN</Text>
+          <Text style={s.btnText}>Try Again</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[s.btnOutline, { marginTop: spacing.md }]} onPress={() => navigation.goBack()} activeOpacity={0.85}>
-          <Text style={s.btnOutlineText}>GO BACK</Text>
+          <Text style={s.btnOutlineText}>Cancel</Text>
         </TouchableOpacity>
       </View>
     );
@@ -421,15 +409,15 @@ export default function AuthScreen({ navigation }: Props) {
   /* ── LOCKED ──────────────────────────────────────────────────────── */
   if (step === 'locked') {
     return (
-      <View style={[s.center, { backgroundColor: '#1A080C' }]}>
+      <View style={s.center}>
         <View style={[s.resultCircle, { borderColor: colors.danger, backgroundColor: colors.dangerDim }]}>
           <Text style={[s.resultGlyph, { color: colors.danger }]}>🔒</Text>
         </View>
-        <Text style={[s.resultTitle, { color: colors.danger }]}>TERMINAL LOCKED</Text>
-        <Text style={s.monoText}>Maximum failed verification attempts reached.</Text>
+        <Text style={[s.resultTitle, { color: colors.danger }]}>Terminal Locked</Text>
+        <Text style={s.monoText}>Too many failed attempts. Please wait.</Text>
         <Text style={[s.lockTimer, { color: colors.danger }]}>{lockCountdown}s</Text>
         <TouchableOpacity style={[s.btnOutline, { marginTop: spacing.xl }]} onPress={() => navigation.goBack()} activeOpacity={0.85}>
-          <Text style={s.btnOutlineText}>RETURN TO HOME</Text>
+          <Text style={s.btnOutlineText}>Back to Home</Text>
         </TouchableOpacity>
       </View>
     );
@@ -444,14 +432,9 @@ export default function AuthScreen({ navigation }: Props) {
         <Camera style={StyleSheet.absoluteFill} device={device} isActive={step === 'ready' || step === 'liveness' || step === 'recognizing'} outputs={[photoOutput]} />
         {passedFlash && <View style={s.flashOverlay} />}
 
-        {/* Viewfinder Reticle */}
+        {/* Viewfinder Target */}
         <View style={s.ovalWrap}>
-          <Animated.View style={[s.oval, { transform: [{ scale: pulseAnim }] }, passedFlash && { borderColor: colors.success }]}>
-            <View style={[s.cornerTick, s.tickTL]} />
-            <View style={[s.cornerTick, s.tickTR]} />
-            <View style={[s.cornerTick, s.tickBL]} />
-            <View style={[s.cornerTick, s.tickBR]} />
-          </Animated.View>
+          <Animated.View style={[s.oval, { transform: [{ scale: pulseAnim }] }, passedFlash && { borderColor: colors.success }]} />
         </View>
 
         <View style={s.topOverlay}>
@@ -462,7 +445,7 @@ export default function AuthScreen({ navigation }: Props) {
                   {currentChallenge?.glyph}
                 </Animated.Text>
                 <View style={s.challengeMeta}>
-                  <Text style={s.challengeStep}>GESTURE CHALLENGE {completedCount + 1}/{challenges.length}</Text>
+                  <Text style={s.challengeStep}>Step {completedCount + 1} of {challenges.length}</Text>
                   <Text style={s.challengeText}>{statusText}</Text>
                 </View>
               </View>
@@ -472,18 +455,13 @@ export default function AuthScreen({ navigation }: Props) {
                   backgroundColor: challengeProgress >= 100 ? colors.success : colors.accent,
                 }]} />
               </View>
-              <View style={s.dots}>
-                {challenges.map((_, i) => (
-                  <View key={i} style={[s.dot, i < completedCount && s.dotDone, i === completedCount && s.dotActive]} />
-                ))}
-              </View>
             </View>
           )}
 
           {step === 'recognizing' && (
             <View style={s.challengeCard}>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={[s.challengeText, { marginTop: spacing.md }]}>{statusText}</Text>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={[s.challengeText, { marginTop: spacing.sm }]}>{statusText}</Text>
             </View>
           )}
         </View>
@@ -492,7 +470,7 @@ export default function AuthScreen({ navigation }: Props) {
           <View style={[s.bottomHud, !faceFound && s.bottomHudWarn]}>
             <View style={[s.faceDot, { backgroundColor: faceFound ? colors.success : colors.danger }]} />
             <Text style={[s.bottomHudText, !faceFound && { color: colors.danger }]}>
-              {faceFound ? 'Face in focus — follow gesture prompt' : 'No face detected — hold phone upright'}
+              {faceFound ? 'Face detected — follow instruction' : 'Look directly at camera'}
             </Text>
           </View>
         )}
@@ -500,22 +478,20 @@ export default function AuthScreen({ navigation }: Props) {
 
       {step === 'ready' && (
         <View style={s.readyPanel}>
-          <View style={s.readyHandle} />
-          <Text style={s.readyTitle}>BIOMETRIC RECOGNITION</Text>
-          <Text style={s.readySub}>Hold camera at eye level and follow {challenges.length} dynamic anti-spoof prompts</Text>
+          <Text style={s.readyTitle}>Facial Verification</Text>
+          <Text style={s.readySub}>Hold device at eye level and follow {challenges.length} quick gestures</Text>
           
           <View style={s.previewList}>
             {challenges.map((c, i) => (
               <View key={i} style={s.previewRow}>
                 <View style={s.previewNum}><Text style={s.previewNumText}>{i + 1}</Text></View>
-                <Text style={s.previewGlyph}>{c.glyph}</Text>
                 <Text style={s.previewText}>{c.instruction}</Text>
               </View>
             ))}
           </View>
           
           <TouchableOpacity style={s.startBtn} onPress={startLiveness} activeOpacity={0.85}>
-            <Text style={s.startBtnText}>START SCAN & AUTHENTICATE</Text>
+            <Text style={s.startBtnText}>Start Face Scan</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -527,84 +503,70 @@ const OVAL = 230;
 const s = StyleSheet.create({
   root:  { flex: 1, backgroundColor: colors.bg },
   center:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
-  permCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line, marginBottom: spacing.lg },
-  permIcon: { fontSize: 32 },
-  centerTitle:{ ...typography.h2, marginTop: spacing.md, letterSpacing: 1.5, textAlign: 'center' },
+  permIcon: { fontSize: 44, marginBottom: spacing.md },
+  centerTitle:{ fontSize: 20, fontWeight: '700', marginTop: spacing.md, textAlign: 'center', color: colors.text },
   
   cameraWrap: { flex: 1 },
   ovalWrap:   { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   oval:       {
     width: OVAL, height: OVAL * 1.35, borderRadius: OVAL * 0.67,
-    borderWidth: 2, borderColor: colors.accent,
-    backgroundColor: 'rgba(255, 122, 26, 0.04)',
-    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#FFFFFF', borderStyle: 'dashed',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
-  cornerTick: { position: 'absolute', width: 14, height: 14, borderColor: colors.cyan },
-  tickTL: { top: -2, left: -2, borderTopWidth: 3, borderLeftWidth: 3 },
-  tickTR: { top: -2, right: -2, borderTopWidth: 3, borderRightWidth: 3 },
-  tickBL: { bottom: -2, left: -2, borderBottomWidth: 3, borderLeftWidth: 3 },
-  tickBR: { bottom: -2, right: -2, borderBottomWidth: 3, borderRightWidth: 3 },
 
-  flashOverlay:{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(16, 185, 129, 0.25)' },
-  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: spacing.xxl + spacing.sm, paddingHorizontal: spacing.md },
-  challengeCard: { backgroundColor: 'rgba(8, 12, 20, 0.94)', borderRadius: borderRadius.lg, padding: spacing.md + 2, alignItems: 'center', borderWidth: 1, borderColor: colors.accent, ...shadows.lg },
+  flashOverlay:{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(22, 163, 74, 0.20)' },
+  topOverlay: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: spacing.xxl, paddingHorizontal: spacing.md },
+  challengeCard: { backgroundColor: '#FFFFFF', borderRadius: borderRadius.lg, padding: spacing.md, alignItems: 'center', ...shadows.md },
   challengeHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, width: '100%' },
-  challengeGlyph: { fontSize: 34, color: colors.accent },
+  challengeGlyph: { fontSize: 28, color: colors.accent },
   challengeMeta: { flex: 1 },
-  challengeStep:  { fontFamily: MONO, fontSize: 10, color: colors.textDim, letterSpacing: 1, fontWeight: '700' },
-  challengeText:  { ...typography.h3, fontSize: 15, letterSpacing: 0.5, marginTop: 2 },
-  progressBarBg: { width: '100%', height: 5, backgroundColor: colors.surfaceAlt, borderRadius: 3, marginTop: spacing.md, overflow: 'hidden' },
-  progressBarFill:{ height: 5, borderRadius: 3 },
-  dots:     { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  dot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.lineBright },
-  dotDone:  { backgroundColor: colors.success },
-  dotActive:{ backgroundColor: colors.accent, width: 22 },
+  challengeStep:  { fontSize: 11, color: colors.textDim, fontWeight: '600' },
+  challengeText:  { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 1 },
+  progressBarBg: { width: '100%', height: 4, backgroundColor: colors.surfaceAlt, borderRadius: 2, marginTop: spacing.md, overflow: 'hidden' },
+  progressBarFill:{ height: 4, borderRadius: 2 },
 
-  bottomHud:     { position: 'absolute', bottom: spacing.lg, left: spacing.md, right: spacing.md, backgroundColor: 'rgba(8, 12, 20, 0.90)', borderRadius: borderRadius.md, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.lineBright },
-  bottomHudWarn: { borderColor: colors.danger },
+  bottomHud:     { position: 'absolute', bottom: spacing.lg, left: spacing.md, right: spacing.md, backgroundColor: 'rgba(15, 23, 42, 0.85)', borderRadius: borderRadius.md, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  bottomHudWarn: { backgroundColor: 'rgba(220, 38, 38, 0.90)' },
   faceDot:       { width: 8, height: 8, borderRadius: 4 },
-  bottomHudText: { fontFamily: MONO, fontSize: 12, color: colors.textDim },
+  bottomHudText: { fontSize: 12.5, fontWeight: '600', color: '#FFFFFF' },
 
-  readyPanel: { backgroundColor: colors.surface, borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl, padding: spacing.xl, borderTopWidth: 1, borderTopColor: colors.line, ...shadows.lg },
-  readyHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.lineBright, alignSelf: 'center', marginBottom: spacing.md },
-  readyTitle: { ...typography.h2, textAlign: 'center', letterSpacing: 1.5 },
-  readySub:   { ...typography.bodySmall, textAlign: 'center', marginTop: spacing.xs, color: colors.textDim },
+  readyPanel: { backgroundColor: '#FFFFFF', borderTopLeftRadius: borderRadius.lg, borderTopRightRadius: borderRadius.lg, padding: spacing.xl, borderTopWidth: 1, borderTopColor: colors.line, ...shadows.md },
+  readyTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center', color: colors.text },
+  readySub:   { fontSize: 12.5, textAlign: 'center', marginTop: spacing.xs, color: colors.textDim },
   previewList:{ marginTop: spacing.md },
   previewRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs + 2, gap: spacing.md },
-  previewNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.accentDim, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.accent },
-  previewNumText:{ fontSize: 11, fontWeight: '800', color: colors.accent },
-  previewGlyph: { fontSize: 18, color: colors.accent },
-  previewText:  { ...typography.body, flex: 1, fontSize: 13.5 },
-  startBtn:     { backgroundColor: colors.accent, paddingVertical: spacing.md + 2, borderRadius: borderRadius.md, alignItems: 'center', marginTop: spacing.lg, ...shadows.glowAccent },
-  startBtnText: { ...typography.button, color: colors.onAccent, fontSize: 15 },
+  previewNum: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  previewNumText:{ fontSize: 11, fontWeight: '700', color: colors.textDim },
+  previewText:  { fontSize: 13.5, color: colors.text, fontWeight: '500', flex: 1 },
+  startBtn:     { backgroundColor: colors.accent, paddingVertical: spacing.md, borderRadius: borderRadius.md, alignItems: 'center', marginTop: spacing.lg, ...shadows.sm },
+  startBtnText: { ...typography.button, color: colors.onAccent, fontSize: 14.5 },
 
-  resultCircle:{ width: 88, height: 88, borderRadius: 44, borderWidth: 3, alignItems: 'center', justifyContent: 'center', ...shadows.glowSuccess },
-  resultGlyph: { fontSize: 44, fontWeight: '900' },
-  resultTitle: { fontSize: 18, fontWeight: '800', marginTop: spacing.lg, letterSpacing: 2 },
-  resultName:  { ...typography.h1, marginTop: spacing.xs, textAlign: 'center' },
-  monoText:    { fontFamily: MONO, fontSize: 12.5, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center' },
+  resultCircle:{ width: 80, height: 80, borderRadius: 40, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  resultGlyph: { fontSize: 36, fontWeight: '800' },
+  resultTitle: { fontSize: 20, fontWeight: '800', marginTop: spacing.lg },
+  resultName:  { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: spacing.xs, textAlign: 'center' },
+  monoText:    { fontSize: 13, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center' },
 
-  scoreSection:{ width: '100%', marginTop: spacing.lg, backgroundColor: colors.surface, padding: spacing.md, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.line },
+  scoreSection:{ width: '100%', marginTop: spacing.lg, backgroundColor: '#FFFFFF', padding: spacing.md, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.line, ...shadows.sm },
   scoreRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  scoreLabel:  { fontFamily: MONO, fontSize: 10, color: colors.textFaint, letterSpacing: 1, fontWeight: '700' },
-  scoreValue:  { fontFamily: MONO, fontSize: 18, fontWeight: '800' },
-  scoreBarBg:  { height: 8, backgroundColor: colors.surfaceAlt, borderRadius: 4, marginTop: spacing.xs, overflow: 'visible', position: 'relative' },
-  scoreBarFill:{ height: 8, borderRadius: 4 },
-  thresholdMark:{ position: 'absolute', top: -3, width: 2, height: 14, backgroundColor: colors.text },
-  scoreHint:   { fontFamily: MONO, fontSize: 10, color: colors.textFaint, marginTop: spacing.xs },
+  scoreLabel:  { fontSize: 11, color: colors.textDim, fontWeight: '600' },
+  scoreValue:  { fontSize: 16, fontWeight: '800', fontFamily: MONO },
+  scoreBarBg:  { height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 3, marginTop: spacing.xs, overflow: 'visible', position: 'relative' },
+  scoreBarFill:{ height: 6, borderRadius: 3 },
+  thresholdMark:{ position: 'absolute', top: -3, width: 2, height: 12, backgroundColor: colors.text },
+  scoreHint:   { fontSize: 10.5, color: colors.textFaint, marginTop: spacing.xs },
 
   verifyGrid:  { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.md, flexWrap: 'wrap', justifyContent: 'center' },
-  verifyBadge: { borderWidth: 1, paddingHorizontal: spacing.sm + 2, paddingVertical: 4, borderRadius: borderRadius.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  verifyIcon:  { fontSize: 11, fontWeight: '800' },
-  verifyText:  { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5 },
+  verifyBadge: { borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.full },
+  verifyText:  { fontSize: 11, fontWeight: '600', color: colors.textDim },
 
-  attendBadge: { marginTop: spacing.md, backgroundColor: colors.accentDim, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: borderRadius.full, borderWidth: 1, borderColor: colors.accent },
-  attendText:  { fontSize: 11.5, fontWeight: '800', color: colors.accent, letterSpacing: 0.8 },
-  geoText:     { fontFamily: MONO, fontSize: 11.5, color: colors.textDim, marginTop: spacing.xs },
+  attendBadge: { marginTop: spacing.md, backgroundColor: colors.accentDim, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2, borderRadius: borderRadius.full, borderWidth: 1, borderColor: '#FED7AA' },
+  attendText:  { fontSize: 12, fontWeight: '700', color: colors.accent },
+  geoText:     { fontSize: 12, color: colors.textDim, marginTop: spacing.xs },
 
-  lockTimer:   { fontSize: 52, fontWeight: '800', fontFamily: MONO, marginTop: spacing.lg },
-  btn:         { backgroundColor: colors.accent, paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%', alignItems: 'center', ...shadows.glowAccent },
+  lockTimer:   { fontSize: 44, fontWeight: '800', fontFamily: MONO, marginTop: spacing.lg },
+  btn:         { backgroundColor: colors.accent, paddingVertical: spacing.md, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%', alignItems: 'center', ...shadows.sm },
   btnText:     { ...typography.button, color: colors.onAccent },
-  btnOutline:  { borderWidth: 1.5, borderColor: colors.lineBright, paddingVertical: spacing.md, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%', alignItems: 'center', backgroundColor: colors.surface },
+  btnOutline:  { borderWidth: 1, borderColor: colors.lineBright, paddingVertical: spacing.md, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%', alignItems: 'center', backgroundColor: '#FFFFFF' },
   btnOutlineText:{ ...typography.button, color: colors.textDim },
 });

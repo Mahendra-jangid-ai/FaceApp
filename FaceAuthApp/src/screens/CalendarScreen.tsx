@@ -148,15 +148,15 @@ export default function CalendarScreen({ navigation, route }: Props) {
       <View style={styles.statsRow}>
         <View style={styles.stat}>
           <Text style={[styles.statNum, { color: colors.accent }]}>{monthStats.days}</Text>
-          <Text style={styles.statLbl}>ACTIVE DAYS</Text>
+          <Text style={styles.statLbl}>Active Days</Text>
         </View>
         <View style={styles.stat}>
           <Text style={[styles.statNum, { color: colors.success }]}>{monthStats.hours}h</Text>
-          <Text style={styles.statLbl}>TOTAL HOURS</Text>
+          <Text style={styles.statLbl}>Total Hours</Text>
         </View>
         <View style={styles.stat}>
           <Text style={[styles.statNum, { color: colors.cyan }]}>{monthStats.workers}</Text>
-          <Text style={styles.statLbl}>WORKERS ACTIVE</Text>
+          <Text style={styles.statLbl}>Workers Active</Text>
         </View>
       </View>
 
@@ -205,16 +205,13 @@ export default function CalendarScreen({ navigation, route }: Props) {
       {/* Selected day activity records */}
       {selectedDate !== null && (
         <View style={styles.recordsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.recordsTitle}>
-              {selectedDate} {MONTHS[currentDate.getMonth()].toUpperCase()} — {dayRecords.length} RECORD{dayRecords.length !== 1 ? 'S' : ''}
-            </Text>
-            <View style={styles.sectionLine} />
-          </View>
+          <Text style={styles.recordsTitle}>
+            {selectedDate} {MONTHS[currentDate.getMonth()]} — {dayRecords.length} Record{dayRecords.length !== 1 ? 's' : ''}
+          </Text>
 
           {dayRecords.length === 0 ? (
             <View style={styles.noRecordsBox}>
-              <Text style={styles.noRecords}>No attendance punches recorded on this date.</Text>
+              <Text style={styles.noRecords}>No attendance records for this date.</Text>
             </View>
           ) : (
             dayRecords.map(r => (
@@ -225,8 +222,8 @@ export default function CalendarScreen({ navigation, route }: Props) {
                 <View style={styles.recordInfo}>
                   <Text style={styles.recordName}>{r.userName}</Text>
                   <Text style={styles.recordTime}>
-                    PUNCH IN: {formatTime(r.checkInTime)}
-                    {r.checkOutTime ? `  |  OUT: ${formatTime(r.checkOutTime)}` : '  |  (ON SITE)'}
+                    In: {formatTime(r.checkInTime)}
+                    {r.checkOutTime ? `  |  Out: ${formatTime(r.checkOutTime)}` : '  |  (Active)'}
                   </Text>
                 </View>
                 {r.withinGeofence && (
@@ -240,7 +237,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
         </View>
       )}
 
-      <View style={{ height: spacing.xxxl }} />
+      <View style={{ height: spacing.xxl }} />
     </ScrollView>
   );
 }
@@ -250,71 +247,69 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   monthNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: spacing.md, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.line,
+    padding: spacing.md, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: colors.line,
   },
-  navBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line },
-  navText: { fontSize: 22, fontWeight: '700', color: colors.accent, lineHeight: 24 },
-  monthTitle: { ...typography.h3, letterSpacing: 0.8 },
+  navBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  navText: { fontSize: 20, fontWeight: '700', color: colors.accent, lineHeight: 22 },
+  monthTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
   
   statsRow: {
     flexDirection: 'row', padding: spacing.md, gap: spacing.sm,
   },
   stat: {
-    flex: 1, backgroundColor: colors.surface, padding: spacing.md,
-    borderRadius: borderRadius.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.line, ...shadows.sm,
+    flex: 1, backgroundColor: '#FFFFFF', padding: spacing.md,
+    borderRadius: borderRadius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
   statNum: { fontSize: 20, fontWeight: '800', fontFamily: MONO },
-  statLbl: { ...typography.caption, fontSize: 8.5, marginTop: 2, color: colors.textDim },
+  statLbl: { fontSize: 11, fontWeight: '600', color: colors.textDim, marginTop: 2 },
 
   calendarCard: {
-    marginHorizontal: spacing.md, backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.line,
+    marginHorizontal: spacing.md, backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.line,
     ...shadows.sm,
   },
   weekRow: {
     flexDirection: 'row', paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, marginBottom: spacing.xs,
   },
   weekDay: {
-    width: CELL_SIZE, textAlign: 'center', fontSize: 10,
-    fontWeight: '800', color: colors.textFaint, letterSpacing: 0.8,
+    width: CELL_SIZE, textAlign: 'center', fontSize: 10.5,
+    fontWeight: '700', color: colors.textFaint,
   },
   calGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingTop: spacing.xs },
   dayCell: {
     width: CELL_SIZE, aspectRatio: 1, alignItems: 'center',
     justifyContent: 'center', borderRadius: borderRadius.sm, marginVertical: 2,
   },
-  dayCellInactive: { opacity: 0.2 },
-  dayCellToday: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.accent },
-  dayCellSelected: { backgroundColor: colors.accent, ...shadows.glowAccent },
-  dayNum: { fontSize: 13, fontWeight: '600', color: colors.text, fontFamily: MONO },
+  dayCellInactive: { opacity: 0.25 },
+  dayCellToday: { backgroundColor: colors.accentDim, borderWidth: 1, borderColor: colors.accent },
+  dayCellSelected: { backgroundColor: colors.accent },
+  dayNum: { fontSize: 13, fontWeight: '600', color: colors.text },
   dayNumInactive: { color: colors.textFaint },
   dayNumToday: { color: colors.accent, fontWeight: '800' },
-  dayNumSelected: { color: colors.onAccent, fontWeight: '900' },
+  dayNumSelected: { color: colors.onAccent, fontWeight: '800' },
   dayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
   dayDotNormal: { backgroundColor: colors.success },
   dayDotHigh: { backgroundColor: colors.cyan },
 
   recordsSection: { padding: spacing.md, marginTop: spacing.xs },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-  recordsTitle: { ...typography.caption, color: colors.accent, letterSpacing: 1, fontWeight: '800' },
-  sectionLine: { flex: 1, height: 1, backgroundColor: colors.line, marginLeft: spacing.md },
+  recordsTitle: { fontSize: 13.5, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
   
-  noRecordsBox: { backgroundColor: colors.surface, padding: spacing.lg, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.line, alignItems: 'center' },
-  noRecords: { ...typography.bodySmall, color: colors.textDim, textAlign: 'center' },
+  noRecordsBox: { backgroundColor: '#FFFFFF', padding: spacing.lg, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.line, alignItems: 'center' },
+  noRecords: { fontSize: 13, color: colors.textDim, textAlign: 'center' },
   
   recordCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface,
-    padding: spacing.md, borderRadius: borderRadius.lg, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.line, ...shadows.sm,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
   recordAvatar: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: colors.surfaceAlt, alignItems: 'center',
-    justifyContent: 'center', marginRight: spacing.md, borderWidth: 1, borderColor: colors.lineBright,
+    justifyContent: 'center', marginRight: spacing.md,
   },
-  recordAvatarText: { fontSize: 15, fontWeight: '800', color: colors.accent },
+  recordAvatarText: { fontSize: 15, fontWeight: '700', color: colors.accent },
   recordInfo: { flex: 1 },
-  recordName: { ...typography.body, fontWeight: '700', fontSize: 13.5 },
-  recordTime: { fontFamily: MONO, fontSize: 10.5, color: colors.textDim, marginTop: 2 },
-  geoBadge: { backgroundColor: colors.successDim, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.xs, borderWidth: 1, borderColor: colors.success },
-  geoTag: { fontSize: 9, fontWeight: '800', color: colors.success },
+  recordName: { fontSize: 14, fontWeight: '700', color: colors.text },
+  recordTime: { fontSize: 11.5, color: colors.textDim, marginTop: 2 },
+  geoBadge: { backgroundColor: colors.successDim, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.xs },
+  geoTag: { fontSize: 9.5, fontWeight: '700', color: colors.success },
 });

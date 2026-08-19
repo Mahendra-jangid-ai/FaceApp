@@ -14,7 +14,6 @@ import { speak } from '../services/voicePrompts';
 import type { RootStackParamList } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PPECheck'>;
-
 type Step = 'ready' | 'checking' | 'pass' | 'fail';
 
 export default function PPECheckScreen({ navigation }: Props) {
@@ -56,13 +55,11 @@ export default function PPECheckScreen({ navigation }: Props) {
   if (!hasPermission) {
     return (
       <View style={styles.centered}>
-        <View style={styles.permCircle}>
-          <Text style={styles.permIcon}>🛡️</Text>
-        </View>
-        <Text style={styles.infoTitle}>CAMERA PERMISSION REQUIRED</Text>
-        <Text style={styles.infoSub}>PPE audit requires camera to detect safety gear.</Text>
+        <Text style={styles.permIcon}>🛡️</Text>
+        <Text style={styles.infoTitle}>Camera Permission Required</Text>
+        <Text style={styles.infoSub}>PPE audit needs camera access to inspect safety equipment.</Text>
         <TouchableOpacity style={styles.button} onPress={requestPermission} activeOpacity={0.85}>
-          <Text style={styles.buttonText}>GRANT CAMERA ACCESS</Text>
+          <Text style={styles.buttonText}>Grant Camera Access</Text>
         </TouchableOpacity>
       </View>
     );
@@ -71,7 +68,7 @@ export default function PPECheckScreen({ navigation }: Props) {
   if (!device) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.infoTitle}>NO CAMERA DETECTED</Text>
+        <Text style={styles.infoTitle}>No Camera Found</Text>
       </View>
     );
   }
@@ -79,7 +76,7 @@ export default function PPECheckScreen({ navigation }: Props) {
   if (step === 'pass' || step === 'fail') {
     const passed = step === 'pass';
     return (
-      <View style={[styles.centered, { backgroundColor: passed ? '#061710' : '#1A080C' }]}>
+      <View style={styles.centered}>
         <View style={[styles.resultCircle, { borderColor: passed ? colors.success : colors.danger, backgroundColor: passed ? colors.successDim : colors.dangerDim }]}>
           <Text style={[styles.resultIcon, { color: passed ? colors.success : colors.danger }]}>
             {passed ? '✓' : '⚠️'}
@@ -87,10 +84,10 @@ export default function PPECheckScreen({ navigation }: Props) {
         </View>
         
         <Text style={[styles.resultTitle, { color: passed ? colors.success : colors.danger }]}>
-          {passed ? 'SAFETY COMPLIANT' : 'PPE NON-COMPLIANT'}
+          {passed ? 'PPE Compliant' : 'Safety Gear Missing'}
         </Text>
         <Text style={styles.resultSub}>
-          {passed ? 'Worker has verified mandatory safety gear' : 'Mandatory safety gear missing or obscured'}
+          {passed ? 'Worker has verified helmet and reflective vest' : 'Mandatory safety helmet or vest not detected'}
         </Text>
 
         {result && (
@@ -100,9 +97,9 @@ export default function PPECheckScreen({ navigation }: Props) {
                 <Text style={styles.itemIcon}>⛑️</Text>
                 <Text style={styles.detailLabel}>Safety Helmet</Text>
               </View>
-              <View style={[styles.badge, { backgroundColor: result.helmetDetected ? colors.successDim : colors.dangerDim, borderColor: result.helmetDetected ? colors.success : colors.danger }]}>
+              <View style={[styles.badge, { backgroundColor: result.helmetDetected ? colors.successDim : colors.dangerDim, borderColor: result.helmetDetected ? '#BBF7D0' : '#FECACA' }]}>
                 <Text style={[styles.badgeText, { color: result.helmetDetected ? colors.success : colors.danger }]}>
-                  {result.helmetDetected ? `DETECTED (${(result.helmetConfidence * 100).toFixed(0)}%)` : 'NOT DETECTED'}
+                  {result.helmetDetected ? `Detected (${(result.helmetConfidence * 100).toFixed(0)}%)` : 'Not Detected'}
                 </Text>
               </View>
             </View>
@@ -114,15 +111,15 @@ export default function PPECheckScreen({ navigation }: Props) {
                 <Text style={styles.itemIcon}>🦺</Text>
                 <Text style={styles.detailLabel}>High-Vis Vest</Text>
               </View>
-              <View style={[styles.badge, { backgroundColor: result.vestDetected ? colors.successDim : colors.dangerDim, borderColor: result.vestDetected ? colors.success : colors.danger }]}>
+              <View style={[styles.badge, { backgroundColor: result.vestDetected ? colors.successDim : colors.dangerDim, borderColor: result.vestDetected ? '#BBF7D0' : '#FECACA' }]}>
                 <Text style={[styles.badgeText, { color: result.vestDetected ? colors.success : colors.danger }]}>
-                  {result.vestDetected ? `DETECTED (${(result.vestConfidence * 100).toFixed(0)}%)` : 'NOT DETECTED'}
+                  {result.vestDetected ? `Detected (${(result.vestConfidence * 100).toFixed(0)}%)` : 'Not Detected'}
                 </Text>
               </View>
             </View>
 
             <View style={styles.cardDivider} />
-            <Text style={styles.latency}>AI Inference Time: {result.detectionTimeMs}ms</Text>
+            <Text style={styles.latency}>Inference Time: {result.detectionTimeMs}ms</Text>
           </View>
         )}
 
@@ -133,14 +130,14 @@ export default function PPECheckScreen({ navigation }: Props) {
             setResult(null);
           }}
           activeOpacity={0.85}>
-          <Text style={styles.buttonText}>{passed ? 'AUDIT NEXT WORKER' : 'RE-SCAN SAFETY GEAR'}</Text>
+          <Text style={styles.buttonText}>{passed ? 'Audit Next Worker' : 'Try Again'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.buttonOutline, { marginTop: spacing.md }]}
           onPress={() => navigation.goBack()}
           activeOpacity={0.85}>
-          <Text style={styles.buttonOutlineText}>RETURN</Text>
+          <Text style={styles.buttonOutlineText}>Return to Home</Text>
         </TouchableOpacity>
       </View>
     );
@@ -156,18 +153,14 @@ export default function PPECheckScreen({ navigation }: Props) {
           outputs={[photoOutput]}
         />
         
-        {/* Safety Silhouette Reticle */}
+        {/* Safety Guide Frame */}
         <View style={styles.overlay}>
           <View style={styles.targetBox}>
-            <View style={[styles.cornerTick, styles.tickTL]} />
-            <View style={[styles.cornerTick, styles.tickTR]} />
-            <View style={[styles.cornerTick, styles.tickBL]} />
-            <View style={[styles.cornerTick, styles.tickBR]} />
             <View style={styles.headMarker}>
-              <Text style={styles.markerText}>⛑️ HELMET ZONE</Text>
+              <Text style={styles.markerText}>⛑️ Helmet</Text>
             </View>
             <View style={styles.torsoMarker}>
-              <Text style={styles.markerText}>🦺 VEST ZONE</Text>
+              <Text style={styles.markerText}>🦺 Vest</Text>
             </View>
           </View>
         </View>
@@ -175,13 +168,13 @@ export default function PPECheckScreen({ navigation }: Props) {
         <View style={styles.hintContainer}>
           <View style={styles.hintPill}>
             <Text style={styles.hintText}>
-              {step === 'checking' ? 'ANALYZING SAFETY GEAR...' : 'STAND IN FRAME WITH HELMET & VEST'}
+              {step === 'checking' ? 'Analyzing safety gear...' : 'Stand facing camera with helmet & vest'}
             </Text>
           </View>
         </View>
 
         <TouchableOpacity style={styles.flipBtn} onPress={() => setCameraPosition(p => p === 'front' ? 'back' : 'front')} activeOpacity={0.75}>
-          <Text style={styles.flipText}>🔄 {cameraPosition === 'front' ? 'FRONT' : 'BACK'}</Text>
+          <Text style={styles.flipText}>🔄 {cameraPosition === 'front' ? 'Front' : 'Back'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -192,9 +185,9 @@ export default function PPECheckScreen({ navigation }: Props) {
           disabled={step === 'checking'}
           activeOpacity={0.85}>
           {step === 'checking' ? (
-            <ActivityIndicator color={colors.onAccent} size="large" />
+            <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.captureBtnText}>SCAN PPE COMPLIANCE</Text>
+            <Text style={styles.captureBtnText}>Check PPE Safety Gear</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -208,10 +201,9 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center',
     padding: spacing.xl, backgroundColor: colors.bg,
   },
-  permCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line, marginBottom: spacing.lg },
-  permIcon: { fontSize: 32 },
-  infoTitle: { ...typography.h2, textAlign: 'center', letterSpacing: 1.5 },
-  infoSub: { ...typography.bodySmall, textAlign: 'center', marginTop: spacing.xs, color: colors.textDim },
+  permIcon: { fontSize: 44, marginBottom: spacing.md },
+  infoTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center', color: colors.text },
+  infoSub: { fontSize: 13, textAlign: 'center', marginTop: spacing.xs, color: colors.textDim },
 
   cameraContainer: { flex: 1 },
   overlay: {
@@ -220,64 +212,57 @@ const styles = StyleSheet.create({
   },
   targetBox: {
     width: 270, height: 380,
-    borderWidth: 2, borderColor: colors.warn,
+    borderWidth: 2, borderColor: '#FFFFFF', borderStyle: 'dashed',
     borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(245, 158, 11, 0.04)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.lg,
   },
-  cornerTick: { position: 'absolute', width: 14, height: 14, borderColor: colors.cyan },
-  tickTL: { top: -2, left: -2, borderTopWidth: 3, borderLeftWidth: 3 },
-  tickTR: { top: -2, right: -2, borderTopWidth: 3, borderRightWidth: 3 },
-  tickBL: { bottom: -2, left: -2, borderBottomWidth: 3, borderLeftWidth: 3 },
-  tickBR: { bottom: -2, right: -2, borderBottomWidth: 3, borderRightWidth: 3 },
 
-  headMarker: { backgroundColor: 'rgba(8, 12, 20, 0.85)', paddingHorizontal: spacing.md, paddingVertical: 3, borderRadius: borderRadius.full, borderWidth: 1, borderColor: colors.lineBright },
-  torsoMarker: { backgroundColor: 'rgba(8, 12, 20, 0.85)', paddingHorizontal: spacing.md, paddingVertical: 3, borderRadius: borderRadius.full, borderWidth: 1, borderColor: colors.lineBright },
-  markerText: { fontSize: 9.5, fontWeight: '800', color: colors.text, letterSpacing: 0.8 },
+  headMarker: { backgroundColor: 'rgba(15, 23, 42, 0.8)', paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.full },
+  torsoMarker: { backgroundColor: 'rgba(15, 23, 42, 0.8)', paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.full },
+  markerText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
 
   hintContainer: {
-    position: 'absolute', top: spacing.xxl + spacing.sm, left: 0, right: 0,
+    position: 'absolute', top: spacing.xxl, left: 0, right: 0,
     alignItems: 'center',
   },
   hintPill: {
-    backgroundColor: 'rgba(8, 12, 20, 0.90)', paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)', paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm, borderRadius: borderRadius.full,
-    borderWidth: 1, borderColor: colors.lineBright,
   },
   hintText: {
-    color: colors.warn, fontSize: 11, fontWeight: '800', letterSpacing: 1.2,
+    color: '#FFFFFF', fontSize: 12.5, fontWeight: '700',
   },
   flipBtn: {
-    position: 'absolute', top: spacing.xxl + spacing.sm, right: spacing.lg,
-    backgroundColor: 'rgba(8, 12, 20, 0.85)', borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
-    borderWidth: 1, borderColor: colors.line,
+    position: 'absolute', top: spacing.xxl, right: spacing.lg,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)', borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md, paddingVertical: 6,
   },
-  flipText: { fontSize: 10, fontWeight: '800', color: colors.text },
+  flipText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
 
   bottomPanel: {
-    backgroundColor: colors.surface, padding: spacing.xl, alignItems: 'center',
+    backgroundColor: '#FFFFFF', padding: spacing.lg, alignItems: 'center',
     borderTopWidth: 1, borderTopColor: colors.line,
   },
   captureBtn: {
-    backgroundColor: colors.warn, paddingVertical: spacing.md + 2,
+    backgroundColor: colors.accent, paddingVertical: spacing.md,
     paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%',
-    alignItems: 'center', ...shadows.md,
+    alignItems: 'center', ...shadows.sm,
   },
   captureBtnDisabled: { opacity: 0.5 },
-  captureBtnText: { ...typography.button, color: '#000000', fontSize: 15, fontWeight: '800' },
+  captureBtnText: { ...typography.button, color: '#FFFFFF', fontSize: 14.5 },
 
   resultCircle: {
-    width: 88, height: 88, borderRadius: 44,
+    width: 80, height: 80, borderRadius: 40,
     alignItems: 'center', justifyContent: 'center', borderWidth: 3,
   },
-  resultIcon: { fontSize: 44, fontWeight: '900' },
-  resultTitle: { fontSize: 20, fontWeight: '800', marginTop: spacing.lg, letterSpacing: 2 },
-  resultSub: { ...typography.bodySmall, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center' },
+  resultIcon: { fontSize: 36, fontWeight: '800' },
+  resultTitle: { fontSize: 20, fontWeight: '800', marginTop: spacing.lg },
+  resultSub: { fontSize: 13, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center' },
   
   detailsCard: {
-    backgroundColor: colors.surface, borderRadius: borderRadius.lg,
+    backgroundColor: '#FFFFFF', borderRadius: borderRadius.md,
     padding: spacing.lg, marginTop: spacing.lg, width: '100%', borderWidth: 1, borderColor: colors.line,
     ...shadows.sm,
   },
@@ -286,26 +271,26 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingVertical: spacing.xs,
   },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  itemIcon: { fontSize: 20 },
-  detailLabel: { ...typography.body, fontWeight: '700', fontSize: 14 },
+  itemIcon: { fontSize: 18 },
+  detailLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
   badge: {
-    paddingHorizontal: spacing.sm + 2, paddingVertical: 4,
-    borderRadius: borderRadius.xs, borderWidth: 1,
+    paddingHorizontal: spacing.md, paddingVertical: 4,
+    borderRadius: borderRadius.sm, borderWidth: 1,
   },
-  badgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  badgeText: { fontSize: 11, fontWeight: '700' },
   cardDivider: { height: 1, backgroundColor: colors.line, marginVertical: spacing.sm },
-  latency: { fontFamily: MONO, fontSize: 11, textAlign: 'center', color: colors.textDim },
+  latency: { fontSize: 11, textAlign: 'center', color: colors.textDim },
 
   button: {
-    backgroundColor: colors.accent, paddingVertical: spacing.md + 2,
+    backgroundColor: colors.accent, paddingVertical: spacing.md,
     paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%',
-    alignItems: 'center', ...shadows.md,
+    alignItems: 'center', ...shadows.sm,
   },
   buttonText: { ...typography.button, color: colors.onAccent },
   buttonOutline: {
-    borderWidth: 1.5, borderColor: colors.lineBright, paddingVertical: spacing.md,
+    borderWidth: 1, borderColor: colors.lineBright, paddingVertical: spacing.md,
     paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, width: '100%',
-    alignItems: 'center', backgroundColor: colors.surface,
+    alignItems: 'center', backgroundColor: '#FFFFFF',
   },
   buttonOutlineText: { ...typography.button, color: colors.textDim },
 });

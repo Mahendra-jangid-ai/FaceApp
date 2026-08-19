@@ -5,8 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Alert,
-  ActivityIndicator,
   TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,8 +21,6 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Attendance'>;
 export default function AttendanceScreen({ navigation }: Props) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [userCount, setUserCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [lastAction, setLastAction] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -52,7 +48,7 @@ export default function AttendanceScreen({ navigation }: Props) {
   };
 
   const formatDuration = (checkIn: number, checkOut: number | null) => {
-    if (!checkOut) return 'Active Now';
+    if (!checkOut) return 'Active';
     const mins = Math.round((checkOut - checkIn) / 60000);
     const hrs = Math.floor(mins / 60);
     const m = mins % 60;
@@ -79,7 +75,7 @@ export default function AttendanceScreen({ navigation }: Props) {
       <View style={[styles.recordCard, isActive && styles.recordCardActive]}>
         <View style={styles.cardHeader}>
           <View style={styles.avatarRow}>
-            <View style={[styles.avatar, { backgroundColor: isActive ? colors.successDim : colors.surfaceAlt, borderColor: isActive ? colors.success : colors.lineBright }]}>
+            <View style={[styles.avatar, { backgroundColor: isActive ? colors.successDim : colors.surfaceAlt }]}>
               <Text style={[styles.avatarText, { color: isActive ? colors.success : colors.textDim }]}>
                 {item.userName.charAt(0).toUpperCase()}
               </Text>
@@ -89,10 +85,10 @@ export default function AttendanceScreen({ navigation }: Props) {
               <Text style={styles.recordId}>{item.employeeId}</Text>
             </View>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: isActive ? colors.successDim : colors.surfaceAlt, borderColor: isActive ? colors.success : colors.lineBright }]}>
+          <View style={[styles.statusBadge, { backgroundColor: isActive ? colors.successDim : colors.surfaceAlt, borderColor: isActive ? '#BBF7D0' : colors.line }]}>
             <View style={[styles.statusDot, { backgroundColor: isActive ? colors.success : colors.textDim }]} />
             <Text style={[styles.statusText, { color: isActive ? colors.success : colors.textDim }]}>
-              {isActive ? 'ON SITE' : formatDuration(item.checkInTime, item.checkOutTime)}
+              {isActive ? 'On Site' : formatDuration(item.checkInTime, item.checkOutTime)}
             </Text>
           </View>
         </View>
@@ -110,13 +106,9 @@ export default function AttendanceScreen({ navigation }: Props) {
               {item.checkOutTime ? formatTime(item.checkOutTime) : '— — : — —'}
             </Text>
           </View>
-          {item.withinGeofence ? (
+          {item.withinGeofence && (
             <View style={styles.geoBadge}>
-              <Text style={styles.geoText}>📍 GPS VERIFIED</Text>
-            </View>
-          ) : (
-            <View style={[styles.geoBadge, { backgroundColor: colors.warnDim, borderColor: colors.warn }]}>
-              <Text style={[styles.geoText, { color: colors.warn }]}>📍 SITE LOGGED</Text>
+              <Text style={styles.geoText}>📍 GPS Verified</Text>
             </View>
           )}
         </View>
@@ -130,17 +122,17 @@ export default function AttendanceScreen({ navigation }: Props) {
       <View style={styles.statsBar}>
         <View style={styles.statItem}>
           <Text style={[styles.statNum, { color: colors.accent }]}>{userCount}</Text>
-          <Text style={styles.statLbl}>REGISTERED</Text>
+          <Text style={styles.statLbl}>Registered</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={[styles.statNum, { color: colors.success }]}>{checkedInCount}</Text>
-          <Text style={styles.statLbl}>ON SITE NOW</Text>
+          <Text style={styles.statLbl}>On Site</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={[styles.statNum, { color: colors.cyan }]}>{completedCount}</Text>
-          <Text style={styles.statLbl}>COMPLETED</Text>
+          <Text style={styles.statLbl}>Completed</Text>
         </View>
       </View>
 
@@ -150,12 +142,12 @@ export default function AttendanceScreen({ navigation }: Props) {
           style={[styles.actionBtn, styles.checkInBtn]}
           onPress={() => navigation.navigate('Authenticate')}
           activeOpacity={0.85}>
-          <View style={styles.actionIconWrap}>
+          <View style={[styles.actionIconWrap, { backgroundColor: colors.success }]}>
             <Text style={styles.actionIcon}>✓</Text>
           </View>
           <View>
-            <Text style={styles.actionTitle}>PUNCH IN</Text>
-            <Text style={styles.actionSub}>Facial Check-in</Text>
+            <Text style={[styles.actionTitle, { color: colors.success }]}>Check In</Text>
+            <Text style={styles.actionSub}>Mark Entry</Text>
           </View>
         </TouchableOpacity>
 
@@ -163,12 +155,12 @@ export default function AttendanceScreen({ navigation }: Props) {
           style={[styles.actionBtn, styles.checkOutBtn]}
           onPress={() => navigation.navigate('Authenticate')}
           activeOpacity={0.85}>
-          <View style={[styles.actionIconWrap, { backgroundColor: colors.dangerDim, borderColor: colors.danger }]}>
-            <Text style={[styles.actionIcon, { color: colors.danger }]}>⇥</Text>
+          <View style={[styles.actionIconWrap, { backgroundColor: colors.danger }]}>
+            <Text style={styles.actionIcon}>⇥</Text>
           </View>
           <View>
-            <Text style={[styles.actionTitle, { color: colors.danger }]}>PUNCH OUT</Text>
-            <Text style={styles.actionSub}>Facial Check-out</Text>
+            <Text style={[styles.actionTitle, { color: colors.danger }]}>Check Out</Text>
+            <Text style={styles.actionSub}>Mark Exit</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -182,7 +174,7 @@ export default function AttendanceScreen({ navigation }: Props) {
               style={[styles.tabBtn, filterMode === tab && styles.tabBtnActive]}
               onPress={() => setFilterMode(tab)}>
               <Text style={[styles.tabText, filterMode === tab && styles.tabTextActive]}>
-                {tab === 'all' ? `ALL (${todayRecords.length})` : tab === 'active' ? `ON SITE (${checkedInCount})` : `OUT (${completedCount})`}
+                {tab === 'all' ? `All (${todayRecords.length})` : tab === 'active' ? `On Site (${checkedInCount})` : `Out (${completedCount})`}
               </Text>
             </TouchableOpacity>
           ))}
@@ -208,12 +200,10 @@ export default function AttendanceScreen({ navigation }: Props) {
       {/* Attendance List */}
       {filteredRecords.length === 0 ? (
         <View style={styles.empty}>
-          <View style={styles.emptyBadge}>
-            <Text style={styles.emptyIcon}>📋</Text>
-          </View>
-          <Text style={styles.emptyText}>No attendance records</Text>
+          <Text style={styles.emptyIcon}>📋</Text>
+          <Text style={styles.emptyText}>No attendance records today</Text>
           <Text style={styles.emptySubtext}>
-            {searchQuery ? 'No records match your search filter.' : 'Use Punch In button above to mark daily entry.'}
+            {searchQuery ? 'No records match your search query.' : 'Use the Check In button above to mark attendance.'}
           </Text>
         </View>
       ) : (
@@ -233,14 +223,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   statsBar: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statNum: { fontSize: 24, fontWeight: '800', fontFamily: MONO },
-  statLbl: { ...typography.caption, fontSize: 9, marginTop: 2, color: colors.textDim },
+  statNum: { fontSize: 22, fontWeight: '800', fontFamily: MONO },
+  statLbl: { fontSize: 11, fontWeight: '600', color: colors.textDim, marginTop: 2 },
   statDivider: { width: 1, backgroundColor: colors.line, marginVertical: spacing.xs },
   
   actionRow: {
@@ -252,35 +242,32 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     gap: spacing.md,
-    borderWidth: 1.5,
-    ...shadows.md,
+    borderWidth: 1,
+    ...shadows.sm,
   },
   checkInBtn: {
-    borderColor: colors.success,
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderColor: '#86EFAC',
+    backgroundColor: colors.successDim,
   },
   checkOutBtn: {
-    borderColor: colors.danger,
-    backgroundColor: 'rgba(244, 63, 94, 0.08)',
+    borderColor: '#FECACA',
+    backgroundColor: colors.dangerDim,
   },
   actionIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.successDim,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.success,
   },
-  actionIcon: { fontSize: 18, color: colors.success, fontWeight: '800' },
-  actionTitle: { ...typography.h3, fontSize: 13, color: colors.success, letterSpacing: 0.8 },
-  actionSub: { fontSize: 10, color: colors.textDim, marginTop: 1 },
+  actionIcon: { fontSize: 16, color: '#FFFFFF', fontWeight: '800' },
+  actionTitle: { fontSize: 14, fontWeight: '700' },
+  actionSub: { fontSize: 11, color: colors.textDim, marginTop: 1 },
 
   searchFilterContainer: {
     paddingHorizontal: spacing.md,
@@ -291,8 +278,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     borderRadius: borderRadius.md,
     padding: 3,
-    borderWidth: 1,
-    borderColor: colors.line,
     marginBottom: spacing.sm,
   },
   tabBtn: {
@@ -302,24 +287,23 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   tabBtnActive: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     ...shadows.sm,
   },
   tabText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
     color: colors.textDim,
-    letterSpacing: 0.5,
   },
   tabTextActive: {
     color: colors.text,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
@@ -329,16 +313,15 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 38,
-    fontSize: 13,
+    fontSize: 13.5,
     color: colors.text,
-    fontFamily: MONO,
   },
   clearSearch: { fontSize: 14, color: colors.textDim, padding: spacing.xs },
 
   list: { padding: spacing.md, paddingTop: spacing.xs },
   recordCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
@@ -346,9 +329,8 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   recordCardActive: {
-    borderColor: colors.success,
-    borderWidth: 1.5,
-    backgroundColor: 'rgba(16, 185, 129, 0.04)',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.success,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -357,17 +339,16 @@ const styles = StyleSheet.create({
   },
   avatarRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
     marginRight: spacing.md,
   },
-  avatarText: { fontSize: 16, fontWeight: '800' },
+  avatarText: { fontSize: 15, fontWeight: '700' },
   recordNames: { flex: 1 },
-  recordName: { ...typography.body, fontWeight: '700', fontSize: 14.5 },
+  recordName: { fontSize: 14, fontWeight: '700', color: colors.text },
   recordId: { fontFamily: MONO, fontSize: 11, color: colors.textDim, marginTop: 1 },
   
   statusBadge: {
@@ -380,7 +361,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.5 },
+  statusText: { fontSize: 10.5, fontWeight: '700' },
 
   divider: { height: 1, backgroundColor: colors.line, marginVertical: spacing.sm },
 
@@ -390,8 +371,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   timeBlock: { flex: 1 },
-  timeTag: { fontSize: 9, fontWeight: '700', color: colors.textFaint, letterSpacing: 0.8 },
-  timeVal: { fontFamily: MONO, fontSize: 12.5, fontWeight: '700', color: colors.text, marginTop: 1 },
+  timeTag: { fontSize: 9.5, fontWeight: '700', color: colors.textFaint, letterSpacing: 0.5 },
+  timeVal: { fontFamily: MONO, fontSize: 12.5, fontWeight: '600', color: colors.text, marginTop: 1 },
   
   geoBadge: {
     backgroundColor: colors.successDim,
@@ -399,9 +380,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: borderRadius.xs,
     borderWidth: 1,
-    borderColor: colors.success,
+    borderColor: '#BBF7D0',
   },
-  geoText: { fontSize: 9.5, fontWeight: '800', color: colors.success, letterSpacing: 0.5 },
+  geoText: { fontSize: 10, fontWeight: '600', color: colors.success },
 
   empty: {
     flex: 1,
@@ -409,17 +390,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
-  emptyBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.line,
-  },
-  emptyIcon: { fontSize: 32 },
-  emptyText: { ...typography.h3, marginTop: spacing.md },
-  emptySubtext: { ...typography.bodySmall, marginTop: spacing.xs, textAlign: 'center', maxWidth: 260 },
+  emptyIcon: { fontSize: 36, marginBottom: spacing.sm },
+  emptyText: { fontSize: 15, fontWeight: '700', color: colors.text },
+  emptySubtext: { fontSize: 12, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center', maxWidth: 260 },
 });

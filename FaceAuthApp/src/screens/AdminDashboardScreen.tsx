@@ -77,16 +77,16 @@ export default function AdminDashboardScreen({ navigation }: Props) {
     const result = await syncToServer();
     setSyncing(false);
     if (result.success) {
-      Alert.alert('SYNC SUCCESSFUL', `Synced: ${result.usersSynced} workers, ${result.logsSynced} logs, ${result.attendanceSynced} attendance records.`);
+      Alert.alert('Sync Successful', `Synced: ${result.usersSynced} workers, ${result.logsSynced} logs, ${result.attendanceSynced} attendance records.`);
     } else {
-      Alert.alert('SYNC FAILED', result.error || 'Unknown network error');
+      Alert.alert('Sync Failed', result.error || 'Network error');
     }
     loadStats();
   };
 
   const handleCleanup = async () => {
     const result = await performCleanup();
-    Alert.alert('CLEANUP COMPLETE', `Purged ${result.logsRemoved} historical logs and ${result.attendanceRemoved} attendance records.`);
+    Alert.alert('Cleanup Complete', `Purged ${result.logsRemoved} historical logs and ${result.attendanceRemoved} attendance records.`);
     loadStats();
   };
 
@@ -97,19 +97,19 @@ export default function AdminDashboardScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.surface} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.headerTitle}>ADMIN CONSOLE</Text>
-            <Text style={styles.headerSub}>Officer: {session?.userName || 'Administrator'}</Text>
+            <Text style={styles.headerTitle}>Admin Console</Text>
+            <Text style={styles.headerSub}>Logged in as {session?.userName || 'Administrator'}</Text>
           </View>
-          <View style={[styles.statusPill, { backgroundColor: online ? colors.successDim : colors.dangerDim, borderColor: online ? colors.success : colors.danger }]}>
+          <View style={[styles.statusPill, { backgroundColor: online ? colors.successDim : colors.dangerDim, borderColor: online ? '#BBF7D0' : '#FECACA' }]}>
             <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.danger }]} />
             <Text style={[styles.statusText, { color: online ? colors.success : colors.danger }]}>
-              {online ? 'ONLINE' : 'OFFLINE'}
+              {online ? 'Online' : 'Offline'}
             </Text>
           </View>
         </View>
@@ -118,62 +118,48 @@ export default function AdminDashboardScreen({ navigation }: Props) {
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
         {[
-          { label: 'REGISTERED', value: stats.enrolled, color: colors.accent },
-          { label: 'ON SITE', value: stats.onSite, color: colors.success },
-          { label: 'SCANS TODAY', value: stats.todayAuth, color: colors.cyan },
-          { label: 'SUCCESS RATE', value: `${stats.successRate}%`, color: colors.warn },
-          { label: 'AVG SCORE', value: `${stats.avgScore}%`, color: colors.accent },
-          { label: 'PENDING SYNC', value: stats.syncPending, color: stats.syncPending > 0 ? colors.danger : colors.textDim },
+          { label: 'Enrolled', value: stats.enrolled, color: colors.accent },
+          { label: 'On Site', value: stats.onSite, color: colors.success },
+          { label: 'Scans Today', value: stats.todayAuth, color: colors.cyan },
+          { label: 'Success %', value: `${stats.successRate}%`, color: colors.warn },
+          { label: 'Avg Match', value: `${stats.avgScore}%`, color: colors.accent },
+          { label: 'Pending Sync', value: stats.syncPending, color: stats.syncPending > 0 ? colors.danger : colors.textDim },
         ].map((s, i) => (
-          <View key={i} style={[styles.statCard, { borderColor: colors.line }]}>
-            <View style={[styles.statTopBorder, { backgroundColor: s.color }]} />
+          <View key={i} style={styles.statCard}>
             <Text style={[styles.statNum, { color: s.color }]}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
         ))}
       </View>
 
-      {/* Threshold Info Pill */}
-      <View style={styles.thresholdCard}>
-        <Text style={styles.thresholdText}>⚙️ {thresholdInfo}</Text>
-      </View>
-
       {/* Management Section */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>PERSONNEL MANAGEMENT</Text>
-          <View style={styles.sectionLine} />
-        </View>
+        <Text style={styles.sectionTitle}>Personnel & Management</Text>
 
         {[
-          { title: 'Worker Directory', sub: 'View, search, or remove registered workers', screen: 'WorkerList' as const, icon: '👥', color: colors.cyan },
-          { title: 'Attendance Calendar', sub: 'Inspect daily shift logs and working hours', screen: 'Calendar' as const, icon: '📅', color: colors.accent },
-          { title: 'Enrol New Worker', sub: 'Register new face template + Aadhaar record', screen: 'Enroll' as const, icon: '➕', color: colors.success },
-          { title: 'Authentication Audit Trail', sub: 'Real-time facial verification attempt logs', screen: 'History' as const, icon: '📜', color: colors.info },
+          { title: 'Worker Directory', sub: 'View, search, or remove registered workers', screen: 'WorkerList' as const, icon: '👥' },
+          { title: 'Attendance Calendar', sub: 'Inspect daily shift logs and working hours', screen: 'Calendar' as const, icon: '📅' },
+          { title: 'Enrol New Worker', sub: 'Register new face template + Aadhaar', screen: 'Enroll' as const, icon: '➕' },
+          { title: 'Authentication Audit Trail', sub: 'Facial verification attempt logs', screen: 'History' as const, icon: '📜' },
         ].map((item, i) => (
           <TouchableOpacity
             key={i}
             style={styles.menuCard}
             onPress={() => navigation.navigate(item.screen)}
             activeOpacity={0.8}>
-            <View style={[styles.menuIconWrap, { backgroundColor: `${item.color}15`, borderColor: `${item.color}40` }]}>
-              <Text style={styles.menuIcon}>{item.icon}</Text>
-            </View>
+            <Text style={styles.menuIcon}>{item.icon}</Text>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>{item.title}</Text>
               <Text style={styles.menuSub}>{item.sub}</Text>
             </View>
-            <Text style={styles.menuArrow}>→</Text>
+            <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* System Maintenance Section */}
+      {/* Server Sync Section */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>SERVER SYNC & STORAGE</Text>
-          <View style={styles.sectionLine} />
-        </View>
+        <Text style={styles.sectionTitle}>Server Sync & Storage</Text>
 
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -182,27 +168,27 @@ export default function AdminDashboardScreen({ navigation }: Props) {
             disabled={syncing}
             activeOpacity={0.85}>
             {syncing ? (
-              <ActivityIndicator color={colors.onAccent} />
+              <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.actionBtnText}>SYNC TO SERVER</Text>
+              <Text style={styles.actionBtnText}>Sync to Server</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.lineBright }]}
+            style={[styles.actionBtn, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: colors.lineBright }]}
             onPress={handleCleanup}
             activeOpacity={0.85}>
-            <Text style={[styles.actionBtnText, { color: colors.text }]}>PURGE OLD DATA</Text>
+            <Text style={[styles.actionBtnText, { color: colors.text }]}>Purge Old Data</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.storageText}>Local Encrypted DB Size: {stats.storageKB} KB</Text>
+        <Text style={styles.storageText}>Local Encrypted Database: {stats.storageKB} KB</Text>
       </View>
 
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-        <Text style={styles.logoutText}>TERMINATE ADMIN SESSION</Text>
+        <Text style={styles.logoutText}>Log Out from Admin</Text>
       </TouchableOpacity>
 
-      <View style={{ height: spacing.xxxl }} />
+      <View style={{ height: spacing.xxl }} />
     </ScrollView>
   );
 }
@@ -210,65 +196,54 @@ export default function AdminDashboardScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    backgroundColor: colors.surface, padding: spacing.xl,
+    backgroundColor: '#FFFFFF', padding: spacing.lg,
     paddingTop: spacing.xxl, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle: { ...typography.h2, letterSpacing: 1.5 },
-  headerSub: { ...typography.bodySmall, color: colors.textDim, marginTop: 2 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+  headerSub: { fontSize: 12, color: colors.textDim, marginTop: 2 },
   statusPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.full, gap: 5, borderWidth: 1 },
   dot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 1 },
+  statusText: { fontSize: 11, fontWeight: '700' },
 
   statsGrid: {
     flexDirection: 'row', flexWrap: 'wrap', padding: spacing.md, gap: spacing.sm,
   },
   statCard: {
-    width: '31.3%', backgroundColor: colors.surface, padding: spacing.md,
-    borderRadius: borderRadius.md, alignItems: 'center', borderWidth: 1,
-    overflow: 'hidden', ...shadows.sm,
+    width: '31.3%', backgroundColor: '#FFFFFF', padding: spacing.md,
+    borderRadius: borderRadius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.line,
+    ...shadows.sm,
   },
-  statTopBorder: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
-  statNum: { fontSize: 20, fontWeight: '800', fontFamily: MONO, marginTop: 2 },
-  statLabel: { fontSize: 8.5, fontWeight: '700', color: colors.textDim, marginTop: 3, letterSpacing: 0.5 },
+  statNum: { fontSize: 20, fontWeight: '800', fontFamily: MONO },
+  statLabel: { fontSize: 11, fontWeight: '600', color: colors.textDim, marginTop: 2 },
 
-  thresholdCard: {
-    marginHorizontal: spacing.md, backgroundColor: colors.surfaceAlt,
-    borderRadius: borderRadius.sm, padding: spacing.sm,
-    borderWidth: 1, borderColor: colors.line, alignItems: 'center',
-  },
-  thresholdText: { fontFamily: MONO, fontSize: 11, color: colors.textDim },
-
-  section: { paddingHorizontal: spacing.md, marginTop: spacing.lg },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
-  sectionTitle: { ...typography.caption, color: colors.accent, letterSpacing: 1.2, fontWeight: '800' },
-  sectionLine: { flex: 1, height: 1, backgroundColor: colors.line, marginLeft: spacing.md },
+  section: { paddingHorizontal: spacing.md, marginTop: spacing.md },
+  sectionTitle: { fontSize: 13.5, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
 
   menuCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface,
-    padding: spacing.md, borderRadius: borderRadius.lg, marginBottom: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
-  menuIconWrap: { width: 38, height: 38, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginRight: spacing.md },
-  menuIcon: { fontSize: 18 },
+  menuIcon: { fontSize: 22, marginRight: spacing.md },
   menuContent: { flex: 1 },
-  menuTitle: { ...typography.body, fontWeight: '700', fontSize: 14 },
-  menuSub: { ...typography.caption, color: colors.textDim, marginTop: 1, letterSpacing: 0.3 },
-  menuArrow: { fontSize: 16, color: colors.textDim, fontWeight: '700' },
+  menuTitle: { fontSize: 14.5, fontWeight: '700', color: colors.text },
+  menuSub: { fontSize: 12, color: colors.textDim, marginTop: 1 },
+  menuArrow: { fontSize: 22, color: colors.textFaint, fontWeight: '300' },
 
   actionRow: { flexDirection: 'row', gap: spacing.sm },
   actionBtn: {
     flex: 1, paddingVertical: spacing.md, borderRadius: borderRadius.md,
-    alignItems: 'center', justifyContent: 'center', ...shadows.md,
+    alignItems: 'center', justifyContent: 'center', ...shadows.sm,
   },
-  actionBtnText: { ...typography.button, color: colors.onAccent, fontSize: 12 },
-  storageText: { ...typography.caption, textAlign: 'center', marginTop: spacing.sm, color: colors.textDim },
+  actionBtnText: { ...typography.button, color: '#FFFFFF', fontSize: 13.5 },
+  storageText: { fontSize: 11.5, textAlign: 'center', marginTop: spacing.sm, color: colors.textDim },
 
   logoutBtn: {
     marginHorizontal: spacing.md, marginTop: spacing.xl,
     paddingVertical: spacing.md, borderRadius: borderRadius.md,
-    borderWidth: 1.5, borderColor: colors.danger, alignItems: 'center',
+    borderWidth: 1, borderColor: '#FECACA', alignItems: 'center',
     backgroundColor: colors.dangerDim,
   },
-  logoutText: { ...typography.button, color: colors.danger, fontSize: 13 },
+  logoutText: { fontSize: 14, fontWeight: '700', color: colors.danger },
 });

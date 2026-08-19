@@ -25,11 +25,11 @@ export default function AdminLoginScreen({ navigation }: Props) {
 
   const handleLogin = async () => {
     if (!adminName.trim()) {
-      Alert.alert('REQUIRED', 'Please enter Admin Name');
+      Alert.alert('Required', 'Please enter your name');
       return;
     }
     if (pin !== DEFAULT_PIN) {
-      Alert.alert('ACCESS DENIED', 'Incorrect Admin PIN. Default is 1234.');
+      Alert.alert('Access Denied', 'Incorrect Admin PIN. Default is 1234.');
       setPin('');
       return;
     }
@@ -53,29 +53,29 @@ export default function AdminLoginScreen({ navigation }: Props) {
         <View style={styles.iconCircle}>
           <Text style={styles.icon}>🔐</Text>
         </View>
-        <Text style={styles.title}>ADMIN CONSOLE</Text>
-        <Text style={styles.subtitle}>Authorized personnel biometric & management access</Text>
+        <Text style={styles.title}>Admin Login</Text>
+        <Text style={styles.subtitle}>Enter administrator credentials to access system management</Text>
 
         <View style={styles.formCard}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>ADMINISTRATOR NAME</Text>
+            <Text style={styles.label}>ADMIN NAME</Text>
             <TextInput
               style={styles.input}
               value={adminName}
               onChangeText={setAdminName}
-              placeholder="e.g. Officer Vikram Singh"
+              placeholder="e.g. Vikram Singh"
               placeholderTextColor={colors.textFaint}
               autoCapitalize="words"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>4-DIGIT SECURITY PIN</Text>
+            <Text style={styles.label}>ADMIN PIN</Text>
             <TextInput
               style={[styles.input, styles.pinInput]}
               value={pin}
               onChangeText={setPin}
-              placeholder="• • • •"
+              placeholder="••••"
               placeholderTextColor={colors.textFaint}
               keyboardType="number-pad"
               secureTextEntry
@@ -84,11 +84,11 @@ export default function AdminLoginScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.pinHintBox}>
-            <Text style={styles.pinHintText}>💡 Default Admin PIN is <Text style={{ color: colors.accent, fontWeight: '800' }}>1234</Text></Text>
+            <Text style={styles.pinHintText}>💡 Default PIN: <Text style={{ fontWeight: '700', color: colors.accent }}>1234</Text></Text>
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.85}>
-            <Text style={styles.buttonText}>AUTHENTICATE & ENTER</Text>
+            <Text style={styles.buttonText}>Log In</Text>
           </TouchableOpacity>
         </View>
 
@@ -96,7 +96,7 @@ export default function AdminLoginScreen({ navigation }: Props) {
           style={styles.backLink}
           onPress={() => navigation.goBack()}
           activeOpacity={0.75}>
-          <Text style={styles.backText}>← Return to Main Terminal</Text>
+          <Text style={styles.backText}>← Back to Home</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -109,40 +109,39 @@ const styles = StyleSheet.create({
     flexGrow: 1, padding: spacing.xl, alignItems: 'center', justifyContent: 'center',
   },
   iconCircle: {
-    width: 76, height: 76, borderRadius: 38,
+    width: 68, height: 68, borderRadius: 34,
     backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: colors.lineBright, ...shadows.md,
+    borderWidth: 1, borderColor: colors.line,
   },
-  icon: { fontSize: 34 },
-  title: { ...typography.h2, marginTop: spacing.lg, letterSpacing: 2, textAlign: 'center' },
-  subtitle: { ...typography.bodySmall, marginTop: spacing.xs, textAlign: 'center', maxWidth: 280, color: colors.textDim },
+  icon: { fontSize: 30 },
+  title: { fontSize: 22, fontWeight: '800', marginTop: spacing.md, color: colors.text },
+  subtitle: { fontSize: 13, marginTop: 4, textAlign: 'center', maxWidth: 280, color: colors.textDim },
   
   formCard: {
-    width: '100%', backgroundColor: colors.surface, borderRadius: borderRadius.lg,
+    width: '100%', backgroundColor: '#FFFFFF', borderRadius: borderRadius.md,
     padding: spacing.xl, marginTop: spacing.xl, borderWidth: 1, borderColor: colors.line,
-    ...shadows.md,
+    ...shadows.sm,
   },
   inputGroup: { width: '100%', marginBottom: spacing.md },
-  label: { ...typography.caption, color: colors.accent, marginBottom: spacing.xs, fontSize: 10 },
+  label: { fontSize: 11, fontWeight: '700', color: colors.textDim, marginBottom: 6, letterSpacing: 0.5 },
   input: {
     backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.line,
     borderRadius: borderRadius.md, padding: spacing.md, fontSize: 14.5, color: colors.text,
   },
   pinInput: {
-    fontFamily: MONO, fontSize: 20, letterSpacing: 8, textAlign: 'center',
+    fontFamily: MONO, fontSize: 18, letterSpacing: 6, textAlign: 'center',
   },
   pinHintBox: {
-    backgroundColor: colors.surfaceAlt, padding: spacing.sm,
-    borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.line,
-    marginBottom: spacing.md, alignItems: 'center',
+    backgroundColor: colors.accentDim, padding: spacing.sm,
+    borderRadius: borderRadius.sm, marginBottom: spacing.md, alignItems: 'center',
   },
-  pinHintText: { fontFamily: MONO, fontSize: 11, color: colors.textDim },
+  pinHintText: { fontSize: 12, color: colors.textDim },
   button: {
-    backgroundColor: colors.accent, paddingVertical: spacing.md + 2,
+    backgroundColor: colors.accent, paddingVertical: spacing.md,
     borderRadius: borderRadius.md, width: '100%', alignItems: 'center',
-    marginTop: spacing.sm, ...shadows.glowAccent,
+    marginTop: spacing.xs, ...shadows.sm,
   },
-  buttonText: { ...typography.button, color: colors.onAccent, fontSize: 14 },
+  buttonText: { ...typography.button, color: colors.onAccent },
   backLink: { marginTop: spacing.xl, padding: spacing.sm },
   backText: { fontSize: 13, color: colors.textDim, fontWeight: '600' },
 });

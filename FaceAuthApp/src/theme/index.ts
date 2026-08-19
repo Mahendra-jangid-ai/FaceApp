@@ -9,65 +9,68 @@ export const MONO = Platform.select({
 }) as string;
 
 export const colors = {
-  // Deep Cyber Dark Palette
-  bg: '#080C14',
-  bgElevated: '#0D1322',
-  surface: '#111827',
-  surfaceAlt: '#182234',
-  surfaceHover: '#1F2C44',
-  line: '#1E293B',
-  lineBright: '#2C3B55',
+  // Clean Enterprise Light Palette
+  bg: '#F8FAFC',
+  bgElevated: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F1F5F9',
+  surfaceHover: '#E2E8F0',
+  line: '#E2E8F0',
+  lineBright: '#CBD5E1',
   
-  // Brand & Glow Colors
-  accent: '#FF7A1A',
-  accentDim: '#2E1705',
-  accentGlow: 'rgba(255, 122, 26, 0.22)',
+  // NHAI Official Brand & Semantic Colors
+  accent: '#EA580C',          // NHAI Deep Saffron
+  accentDim: '#FFF7ED',       // Soft warm cream
+  accentGlow: 'rgba(234, 88, 12, 0.12)',
   
-  cyan: '#00E5FF',
-  cyanDim: '#032330',
-  cyanGlow: 'rgba(0, 229, 255, 0.20)',
+  navy: '#0F172A',            // Deep Corporate Navy
+  navyDim: '#F1F5F9',
   
-  success: '#10B981',
-  successDim: '#062B1E',
-  successGlow: 'rgba(16, 185, 129, 0.20)',
+  cyan: '#0284C7',            // Corporate Sky Blue
+  cyanDim: '#F0F9FF',
+  cyanGlow: 'rgba(2, 132, 199, 0.12)',
   
-  warn: '#F59E0B',
-  warnDim: '#332005',
-  warnGlow: 'rgba(245, 158, 11, 0.20)',
+  success: '#16A34A',         // Forest Emerald Green
+  successDim: '#F0FDF4',
+  successGlow: 'rgba(22, 163, 74, 0.12)',
   
-  danger: '#F43F5E',
-  dangerDim: '#340A13',
-  dangerGlow: 'rgba(244, 63, 94, 0.20)',
+  warn: '#D97706',            // Amber
+  warnDim: '#FFFBEB',
+  warnGlow: 'rgba(217, 119, 6, 0.12)',
   
-  info: '#38BDF8',
-  infoDim: '#08253B',
+  danger: '#DC2626',          // Clean Crimson
+  dangerDim: '#FEF2F2',
+  dangerGlow: 'rgba(220, 38, 38, 0.12)',
   
-  // Text Colors
-  text: '#F8FAFC',
-  textDim: '#94A3B8',
-  textFaint: '#64748B',
-  textMuted: '#475569',
+  info: '#0284C7',
+  infoDim: '#F0F9FF',
+  
+  // Text Colors (High Contrast & Legible)
+  text: '#0F172A',
+  textDim: '#475569',
+  textFaint: '#94A3B8',
+  textMuted: '#64748B',
   onAccent: '#FFFFFF',
   white: '#FFFFFF',
   black: '#000000',
   
-  // Legacy compat aliases (mapped to modern tokens)
-  primary: '#FF7A1A',
-  primaryDark: '#101726',
-  primaryLight: '#2E1705',
-  secondary: '#00E5FF',
-  secondaryLight: '#032330',
-  background: '#080C14',
-  card: '#111827',
-  textSecondary: '#94A3B8',
-  textLight: '#64748B',
-  error: '#F43F5E',
-  errorLight: '#340A13',
-  warning: '#F59E0B',
-  warningLight: '#332005',
-  successLight: '#062B1E',
-  border: '#1E293B',
-  overlay: 'rgba(8, 12, 20, 0.85)',
+  // Legacy compat aliases (mapped to modern light tokens)
+  primary: '#EA580C',
+  primaryDark: '#0F172A',
+  primaryLight: '#FFF7ED',
+  secondary: '#0284C7',
+  secondaryLight: '#F0F9FF',
+  background: '#F8FAFC',
+  card: '#FFFFFF',
+  textSecondary: '#475569',
+  textLight: '#94A3B8',
+  error: '#DC2626',
+  errorLight: '#FEF2F2',
+  warning: '#D97706',
+  warningLight: '#FFFBEB',
+  successLight: '#F0FDF4',
+  border: '#E2E8F0',
+  overlay: 'rgba(15, 23, 42, 0.70)',
 };
 
 export const spacing = {
@@ -81,32 +84,32 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  xs: 4,
+  xs: 6,
   sm: 8,
   md: 12,
-  lg: 18,
-  xl: 26,
+  lg: 16,
+  xl: 24,
   full: 999,
 };
 
 export const typography = {
-  h1: { fontSize: 26, fontWeight: '800' as const, letterSpacing: 0.5, color: colors.text },
-  h2: { fontSize: 21, fontWeight: '700' as const, letterSpacing: 0.3, color: colors.text },
-  h3: { fontSize: 17, fontWeight: '700' as const, letterSpacing: 0.2, color: colors.text },
-  body: { fontSize: 15, fontWeight: '500' as const, color: colors.text, lineHeight: 22 },
+  h1: { fontSize: 24, fontWeight: '800' as const, letterSpacing: -0.3, color: colors.text },
+  h2: { fontSize: 20, fontWeight: '700' as const, letterSpacing: -0.2, color: colors.text },
+  h3: { fontSize: 16, fontWeight: '700' as const, color: colors.text },
+  body: { fontSize: 14.5, fontWeight: '500' as const, color: colors.text, lineHeight: 21 },
   bodySmall: { fontSize: 13, fontWeight: '500' as const, color: colors.textDim, lineHeight: 18 },
-  caption: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 1.2, color: colors.textDim },
-  button: { fontSize: 15, fontWeight: '700' as const, letterSpacing: 0.8 },
+  caption: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 0.8, color: colors.textDim },
+  button: { fontSize: 14.5, fontWeight: '700' as const, letterSpacing: 0.3 },
   mono: { fontFamily: MONO, fontSize: 13, color: colors.text },
 };
 
 export const shadows = {
-  sm: { elevation: 2, shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
-  md: { elevation: 4, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
-  lg: { elevation: 8, shadowColor: '#000', shadowOpacity: 0.65, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } },
-  glowAccent: { elevation: 6, shadowColor: colors.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 4 } },
-  glowCyan: { elevation: 6, shadowColor: colors.cyan, shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 4 } },
-  glowSuccess: { elevation: 6, shadowColor: colors.success, shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 4 } },
+  sm: { elevation: 1, shadowColor: '#0F172A', shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+  md: { elevation: 2, shadowColor: '#0F172A', shadowOpacity: 0.07, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  lg: { elevation: 4, shadowColor: '#0F172A', shadowOpacity: 0.10, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
+  glowAccent: { elevation: 3, shadowColor: colors.accent, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  glowCyan: { elevation: 3, shadowColor: colors.cyan, shadowOpacity: 0.20, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  glowSuccess: { elevation: 3, shadowColor: colors.success, shadowOpacity: 0.20, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
 };
 
 export const screen = { width, height };

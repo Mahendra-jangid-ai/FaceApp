@@ -16,6 +16,7 @@ const mockUser: EnrolledUser = {
   photoUri: 'file:///test.jpg',
   createdAt: Date.now(),
   synced: false,
+  role: 'worker',
 };
 
 const mockLog: AuthLog = {
