@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
 import { getAuthLogs } from '../services/database';
 import type { AuthLog } from '../types';
 
@@ -32,89 +32,88 @@ export default function HistoryScreen() {
   };
 
   const renderItem = ({ item }: { item: AuthLog }) => (
-    <View style={styles.logCard}>
-      <View
-        style={[
-          styles.statusBar,
-          { backgroundColor: item.authenticated ? colors.success : colors.error },
-        ]}
-      />
-      <View style={styles.logContent}>
-        <View style={styles.logHeader}>
+    <View style={[styles.logCard, item.authenticated ? styles.logCardSuccess : styles.logCardFail]}>
+      <View style={styles.logHeader}>
+        <View style={styles.nameRow}>
           <Text style={styles.logName}>
-            {item.userName || 'Unknown'}
+            {item.userName || 'Unidentified Attempt'}
           </Text>
-          <View
+          <Text style={styles.logTime}>{formatTime(item.timestamp)}</Text>
+        </View>
+        <View
+          style={[
+            styles.badge,
+            {
+              backgroundColor: item.authenticated ? colors.successDim : colors.dangerDim,
+              borderColor: item.authenticated ? colors.success : colors.danger,
+            },
+          ]}>
+          <Text
             style={[
-              styles.badge,
-              {
-                backgroundColor: item.authenticated
-                  ? colors.successLight
-                  : colors.errorLight,
-              },
+              styles.badgeText,
+              { color: item.authenticated ? colors.success : colors.danger },
             ]}>
-            <Text
-              style={[
-                styles.badgeText,
-                { color: item.authenticated ? colors.success : colors.error },
-              ]}>
-              {item.authenticated ? 'Verified' : 'Failed'}
+            {item.authenticated ? 'VERIFIED' : 'REJECTED'}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.chipRow}>
+        <View style={[styles.chip, { borderColor: item.livenessPassed ? colors.success : colors.danger }]}>
+          <Text style={[styles.chipText, { color: item.livenessPassed ? colors.success : colors.danger }]}>
+            Liveness: {item.livenessPassed ? 'Pass' : 'Fail'}
+          </Text>
+        </View>
+
+        {item.matchScore > 0 && (
+          <View style={[styles.chip, { borderColor: colors.accent }]}>
+            <Text style={[styles.chipText, { color: colors.accent }]}>
+              Match: {(item.matchScore * 100).toFixed(0)}%
             </Text>
           </View>
-        </View>
-        <Text style={styles.logTime}>{formatTime(item.timestamp)}</Text>
-        <View style={styles.logDetails}>
-          <Text style={styles.logDetail}>
-            Liveness: {item.livenessPassed ? 'Passed' : 'Failed'}
-          </Text>
-          {item.matchScore > 0 && (
-            <Text style={styles.logDetail}>
-              Match: {(item.matchScore * 100).toFixed(1)}%
-            </Text>
-          )}
-          {item.spoofScore !== undefined && (
-            <Text style={styles.logDetail}>
+        )}
+
+        {item.spoofScore !== undefined && (
+          <View style={[styles.chip, { borderColor: item.spoofScore > 0.4 ? colors.cyan : colors.danger }]}>
+            <Text style={[styles.chipText, { color: item.spoofScore > 0.4 ? colors.cyan : colors.danger }]}>
               Spoof: {(item.spoofScore * 100).toFixed(0)}%
             </Text>
-          )}
-        </View>
-        <View style={styles.logDetails}>
-          {item.siteName && (
-            <Text style={styles.logDetail}>
-              Site: {item.siteName}
-            </Text>
-          )}
-          {item.withinGeofence !== undefined && (
-            <Text style={[styles.logDetail, { color: item.withinGeofence ? '#00C853' : '#FF9100' }]}>
-              {item.withinGeofence ? 'In Geofence' : 'Outside'}
-            </Text>
-          )}
-          <Text style={styles.logDetail}>
-            {item.synced ? 'Synced' : 'Pending'}
-          </Text>
-        </View>
-        <View style={styles.logDetails}>
-          {item.bioHashVerified !== undefined && (
-            <Text style={[styles.logDetail, { color: item.bioHashVerified ? colors.secondary : colors.textLight }]}>
+          </View>
+        )}
+
+        {item.bioHashVerified !== undefined && (
+          <View style={[styles.chip, { borderColor: item.bioHashVerified ? colors.cyan : colors.textFaint }]}>
+            <Text style={[styles.chipText, { color: item.bioHashVerified ? colors.cyan : colors.textFaint }]}>
               BioHash: {item.bioHashVerified ? 'OK' : 'N/A'}
             </Text>
-          )}
-          {item.ppeCompliant !== undefined && (
-            <Text style={[styles.logDetail, { color: item.ppeCompliant ? colors.success : colors.warning }]}>
-              PPE: {item.ppeCompliant ? 'OK' : 'Fail'}
+          </View>
+        )}
+
+        {item.withinGeofence !== undefined && (
+          <View style={[styles.chip, { borderColor: item.withinGeofence ? colors.success : colors.warn }]}>
+            <Text style={[styles.chipText, { color: item.withinGeofence ? colors.success : colors.warn }]}>
+              {item.withinGeofence ? 'GPS Site Verified' : 'Outside Boundary'}
             </Text>
-          )}
-          {item.qualityScore !== undefined && item.qualityScore > 0 && (
-            <Text style={styles.logDetail}>
-              Q: {(item.qualityScore * 100).toFixed(0)}%
+          </View>
+        )}
+
+        {item.ppeCompliant !== undefined && (
+          <View style={[styles.chip, { borderColor: item.ppeCompliant ? colors.success : colors.warn }]}>
+            <Text style={[styles.chipText, { color: item.ppeCompliant ? colors.success : colors.warn }]}>
+              PPE: {item.ppeCompliant ? 'Compliant' : 'Non-Compliant'}
             </Text>
-          )}
-          {item.pipelineLatencyMs !== undefined && item.pipelineLatencyMs > 0 && (
-            <Text style={[styles.logDetail, { fontFamily: 'monospace' }]}>
-              {item.pipelineLatencyMs}ms
+          </View>
+        )}
+
+        {item.pipelineLatencyMs !== undefined && item.pipelineLatencyMs > 0 && (
+          <View style={styles.chip}>
+            <Text style={[styles.chipText, { fontFamily: MONO }]}>
+              ⚡ {item.pipelineLatencyMs}ms
             </Text>
-          )}
-        </View>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -126,13 +125,14 @@ export default function HistoryScreen() {
           <TouchableOpacity
             key={f}
             style={[styles.filterChip, filter === f && styles.filterChipActive]}
-            onPress={() => setFilter(f)}>
+            onPress={() => setFilter(f)}
+            activeOpacity={0.75}>
             <Text
               style={[
                 styles.filterText,
                 filter === f && styles.filterTextActive,
               ]}>
-              {f === 'all' ? 'All' : f === 'success' ? 'Verified' : 'Failed'}
+              {f === 'all' ? `ALL (${logs.length})` : f === 'success' ? `VERIFIED (${logs.filter(l => l.authenticated).length})` : `FAILED (${logs.filter(l => !l.authenticated).length})`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -140,8 +140,11 @@ export default function HistoryScreen() {
 
       {filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>{'📭'}</Text>
-          <Text style={styles.emptyText}>No authentication logs yet</Text>
+          <View style={styles.emptyBadge}>
+            <Text style={styles.emptyIcon}>📜</Text>
+          </View>
+          <Text style={styles.emptyText}>No authentication audit records</Text>
+          <Text style={styles.emptySub}>Facial scan attempt logs and security tokens will appear here.</Text>
         </View>
       ) : (
         <FlatList
@@ -157,61 +160,96 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.bg },
   filterRow: {
     flexDirection: 'row',
     padding: spacing.md,
     gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
   filterChip: {
-    paddingHorizontal: spacing.lg,
+    flex: 1,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.line,
+    alignItems: 'center',
   },
   filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+    ...shadows.glowAccent,
   },
-  filterText: { ...typography.bodySmall, fontWeight: '600' },
-  filterTextActive: { color: colors.white },
+  filterText: { fontSize: 10.5, fontWeight: '700', color: colors.textDim, letterSpacing: 0.5 },
+  filterTextActive: { color: colors.onAccent, fontWeight: '800' },
+
   list: { padding: spacing.md },
   logCard: {
-    flexDirection: 'row',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     marginBottom: spacing.sm,
-    overflow: 'hidden',
-    borderWidth: 1, borderColor: colors.line,
+    borderWidth: 1,
+    borderColor: colors.line,
+    ...shadows.sm,
   },
-  statusBar: { width: 4 },
-  logContent: { flex: 1, padding: spacing.md },
+  logCardSuccess: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.success,
+  },
+  logCardFail: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.danger,
+  },
   logHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  logName: { ...typography.body, fontWeight: '600' },
+  nameRow: { flex: 1, marginRight: spacing.sm },
+  logName: { ...typography.body, fontWeight: '700', fontSize: 14 },
+  logTime: { fontFamily: MONO, fontSize: 10.5, color: colors.textDim, marginTop: 2 },
   badge: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 3,
+    borderRadius: borderRadius.xs,
+    borderWidth: 1,
+  },
+  badgeText: { fontSize: 9.5, fontWeight: '800', letterSpacing: 0.8 },
+
+  divider: { height: 1, backgroundColor: colors.line, marginVertical: spacing.sm },
+
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  chip: {
+    backgroundColor: colors.surfaceAlt,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    paddingVertical: 2.5,
+    borderRadius: borderRadius.xs,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  logTime: { ...typography.caption, marginTop: spacing.xs },
-  logDetails: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  logDetail: { ...typography.caption },
+  chipText: { fontSize: 9.5, fontWeight: '700', color: colors.textDim },
+
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: spacing.xl,
   },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { ...typography.bodySmall, marginTop: spacing.md },
+  emptyBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  emptyIcon: { fontSize: 32 },
+  emptyText: { ...typography.h3, marginTop: spacing.md, textAlign: 'center' },
+  emptySub: { ...typography.bodySmall, marginTop: spacing.xs, textAlign: 'center', maxWidth: 280, color: colors.textDim },
 });

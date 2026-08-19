@@ -1,8 +1,8 @@
 import React, { Component, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { colors, typography, spacing, borderRadius, MONO } from './theme';
+import { colors, typography, spacing, borderRadius, shadows, MONO } from './theme';
 import HomeScreen from './screens/HomeScreen';
 import EnrollScreen from './screens/EnrollScreen';
 import AuthScreen from './screens/AuthScreen';
@@ -36,14 +36,18 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
     if (this.state.error) {
       return (
         <View style={eb.root}>
-          <Text style={eb.icon}>!</Text>
-          <Text style={eb.title}>APP ERROR</Text>
-          <ScrollView style={eb.scroll}>
+          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+          <View style={eb.iconBadge}>
+            <Text style={eb.icon}>⚠️</Text>
+          </View>
+          <Text style={eb.title}>SYSTEM RECOVERY</Text>
+          <Text style={eb.subtitle}>An unexpected runtime exception was intercepted.</Text>
+          <ScrollView style={eb.scroll} contentContainerStyle={eb.scrollContent}>
             <Text style={eb.msg}>{this.state.error.message}</Text>
             <Text style={eb.stack}>{this.state.error.stack?.slice(0, 800)}</Text>
           </ScrollView>
-          <TouchableOpacity style={eb.btn} onPress={() => this.setState({ error: null, info: '' })}>
-            <Text style={eb.btnText}>RETRY</Text>
+          <TouchableOpacity style={eb.btn} onPress={() => this.setState({ error: null, info: '' })} activeOpacity={0.8}>
+            <Text style={eb.btnText}>RESTART INTERFACE</Text>
           </TouchableOpacity>
         </View>
       );
@@ -54,12 +58,19 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, EBState> {
 
 const eb = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg, padding: spacing.xl, justifyContent: 'center', alignItems: 'center' },
-  icon: { fontSize: 48, color: colors.danger, fontWeight: '800' },
-  title: { fontSize: 20, color: colors.danger, fontWeight: '800', marginTop: spacing.md, letterSpacing: 2 },
-  scroll: { maxHeight: 300, marginTop: spacing.lg, width: '100%' },
-  msg: { fontFamily: MONO, fontSize: 14, color: colors.text, marginBottom: spacing.md },
-  stack: { fontFamily: MONO, fontSize: 10, color: colors.textDim },
-  btn: { backgroundColor: colors.accent, paddingVertical: spacing.md, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, marginTop: spacing.xl },
+  iconBadge: {
+    width: 68, height: 68, borderRadius: 34,
+    backgroundColor: colors.dangerDim, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: colors.danger, ...shadows.md,
+  },
+  icon: { fontSize: 32 },
+  title: { ...typography.h2, color: colors.danger, marginTop: spacing.lg, letterSpacing: 1.5 },
+  subtitle: { ...typography.bodySmall, color: colors.textDim, marginTop: spacing.xs, textAlign: 'center' },
+  scroll: { maxHeight: 260, marginTop: spacing.lg, width: '100%', backgroundColor: colors.surface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.line },
+  scrollContent: { padding: spacing.md },
+  msg: { fontFamily: MONO, fontSize: 13, color: colors.danger, marginBottom: spacing.md, fontWeight: '700' },
+  stack: { fontFamily: MONO, fontSize: 10, color: colors.textDim, lineHeight: 16 },
+  btn: { backgroundColor: colors.accent, paddingVertical: spacing.md, paddingHorizontal: spacing.xxl, borderRadius: borderRadius.md, marginTop: spacing.xl, ...shadows.glowAccent },
   btnText: { ...typography.button, color: colors.onAccent },
 });
 
@@ -83,6 +94,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Home"
@@ -95,17 +107,18 @@ export default function App() {
             contentStyle: { backgroundColor: colors.bg },
           }}>
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Enroll" component={EnrollScreen} options={{ title: 'ENROL' }} />
-          <Stack.Screen name="Authenticate" component={AuthScreen} options={{ title: 'SCAN' }} />
-          <Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: 'ATTENDANCE' }} />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'DASHBOARD' }} />
-          <Stack.Screen name="History" component={HistoryScreen} options={{ title: 'HISTORY' }} />
-          <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'SYSTEM' }} />
-          <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: 'ADMIN' }} />
-          <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'ADMIN', headerShown: false }} />
-          <Stack.Screen name="WorkerList" component={WorkerListScreen} options={{ title: 'PEOPLE' }} />
-          <Stack.Screen name="Calendar" component={CalendarScreen} options={{ title: 'CALENDAR' }} />
-          <Stack.Screen name="PPECheck" component={PPECheckScreen} options={{ title: 'PPE CHECK' }} />
+          <Stack.Screen name="Enroll" component={EnrollScreen} options={{ title: 'ENROL WORKER' }} />
+          <Stack.Screen name="Authenticate" component={AuthScreen} options={{ title: 'BIOMETRIC SCAN' }} />
+          <Stack.Screen name="Attendance" component={AttendanceScreen} options={{ title: 'ATTENDANCE LOG' }} />
+          <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'SYSTEM ANALYTICS' }} />
+          <Stack.Screen name="History" component={HistoryScreen} options={{ title: 'AUDIT TRAIL' }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'SYSTEM SETTINGS' }} />
+          <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: 'ADMIN SECURITY' }} />
+          <Stack.Screen name="AdminDashboardScreen" component={AdminDashboardScreen} options={{ title: 'ADMIN DASHBOARD', headerShown: false }} />
+          <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'ADMIN DASHBOARD', headerShown: false }} />
+          <Stack.Screen name="WorkerList" component={WorkerListScreen} options={{ title: 'WORKER DIRECTORY' }} />
+          <Stack.Screen name="Calendar" component={CalendarScreen} options={{ title: 'ATTENDANCE CALENDAR' }} />
+          <Stack.Screen name="PPECheck" component={PPECheckScreen} options={{ title: 'PPE SAFETY CHECK' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </ErrorBoundary>

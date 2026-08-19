@@ -4,18 +4,17 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
 import { getAttendanceRecords } from '../services/database';
 import type { RootStackParamList, AttendanceRecord } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Calendar'>;
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -132,72 +131,91 @@ export default function CalendarScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Month navigation */}
+      {/* Month navigation header */}
       <View style={styles.monthNav}>
-        <TouchableOpacity onPress={prevMonth} style={styles.navBtn}>
-          <Text style={styles.navText}>{'<'}</Text>
+        <TouchableOpacity onPress={prevMonth} style={styles.navBtn} activeOpacity={0.75}>
+          <Text style={styles.navText}>‹</Text>
         </TouchableOpacity>
         <Text style={styles.monthTitle}>
           {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
         </Text>
-        <TouchableOpacity onPress={nextMonth} style={styles.navBtn}>
-          <Text style={styles.navText}>{'>'}</Text>
+        <TouchableOpacity onPress={nextMonth} style={styles.navBtn} activeOpacity={0.75}>
+          <Text style={styles.navText}>›</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Month stats */}
+      {/* Monthly KPIs */}
       <View style={styles.statsRow}>
-        <View style={styles.stat}><Text style={styles.statNum}>{monthStats.days}</Text><Text style={styles.statLbl}>Active Days</Text></View>
-        <View style={styles.stat}><Text style={styles.statNum}>{monthStats.hours}</Text><Text style={styles.statLbl}>Total Hours</Text></View>
-        <View style={styles.stat}><Text style={styles.statNum}>{monthStats.workers}</Text><Text style={styles.statLbl}>Workers</Text></View>
+        <View style={styles.stat}>
+          <Text style={[styles.statNum, { color: colors.accent }]}>{monthStats.days}</Text>
+          <Text style={styles.statLbl}>ACTIVE DAYS</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={[styles.statNum, { color: colors.success }]}>{monthStats.hours}h</Text>
+          <Text style={styles.statLbl}>TOTAL HOURS</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={[styles.statNum, { color: colors.cyan }]}>{monthStats.workers}</Text>
+          <Text style={styles.statLbl}>WORKERS ACTIVE</Text>
+        </View>
       </View>
 
-      {/* Weekday headers */}
-      <View style={styles.weekRow}>
-        {WEEKDAYS.map(d => (
-          <Text key={d} style={styles.weekDay}>{d}</Text>
-        ))}
+      {/* Calendar Card */}
+      <View style={styles.calendarCard}>
+        {/* Weekday headers */}
+        <View style={styles.weekRow}>
+          {WEEKDAYS.map(d => (
+            <Text key={d} style={styles.weekDay}>{d}</Text>
+          ))}
+        </View>
+
+        {/* Calendar grid */}
+        <View style={styles.calGrid}>
+          {days.map((day, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[
+                styles.dayCell,
+                !day.isCurrentMonth && styles.dayCellInactive,
+                day.isToday && styles.dayCellToday,
+                selectedDate === day.date && day.isCurrentMonth && styles.dayCellSelected,
+              ]}
+              onPress={() => selectDay(day)}
+              disabled={!day.isCurrentMonth}
+              activeOpacity={0.7}>
+              <Text style={[
+                styles.dayNum,
+                !day.isCurrentMonth && styles.dayNumInactive,
+                day.isToday && styles.dayNumToday,
+                selectedDate === day.date && day.isCurrentMonth && styles.dayNumSelected,
+              ]}>
+                {day.date}
+              </Text>
+              {day.attendanceCount > 0 && day.isCurrentMonth && (
+                <View style={[
+                  styles.dayDot,
+                  day.attendanceCount > 3 ? styles.dayDotHigh : styles.dayDotNormal,
+                ]} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      {/* Calendar grid */}
-      <View style={styles.calGrid}>
-        {days.map((day, i) => (
-          <TouchableOpacity
-            key={i}
-            style={[
-              styles.dayCell,
-              !day.isCurrentMonth && styles.dayCellInactive,
-              day.isToday && styles.dayCellToday,
-              selectedDate === day.date && day.isCurrentMonth && styles.dayCellSelected,
-            ]}
-            onPress={() => selectDay(day)}
-            disabled={!day.isCurrentMonth}>
-            <Text style={[
-              styles.dayNum,
-              !day.isCurrentMonth && styles.dayNumInactive,
-              day.isToday && styles.dayNumToday,
-              selectedDate === day.date && day.isCurrentMonth && styles.dayNumSelected,
-            ]}>
-              {day.date}
-            </Text>
-            {day.attendanceCount > 0 && day.isCurrentMonth && (
-              <View style={[
-                styles.dayDot,
-                day.attendanceCount > 3 ? styles.dayDotHigh : styles.dayDotNormal,
-              ]} />
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Selected day records */}
+      {/* Selected day activity records */}
       {selectedDate !== null && (
         <View style={styles.recordsSection}>
-          <Text style={styles.recordsTitle}>
-            {selectedDate} {MONTHS[currentDate.getMonth()]} — {dayRecords.length} record{dayRecords.length !== 1 ? 's' : ''}
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.recordsTitle}>
+              {selectedDate} {MONTHS[currentDate.getMonth()].toUpperCase()} — {dayRecords.length} RECORD{dayRecords.length !== 1 ? 'S' : ''}
+            </Text>
+            <View style={styles.sectionLine} />
+          </View>
+
           {dayRecords.length === 0 ? (
-            <Text style={styles.noRecords}>No attendance recorded</Text>
+            <View style={styles.noRecordsBox}>
+              <Text style={styles.noRecords}>No attendance punches recorded on this date.</Text>
+            </View>
           ) : (
             dayRecords.map(r => (
               <View key={r.id} style={styles.recordCard}>
@@ -207,78 +225,96 @@ export default function CalendarScreen({ navigation, route }: Props) {
                 <View style={styles.recordInfo}>
                   <Text style={styles.recordName}>{r.userName}</Text>
                   <Text style={styles.recordTime}>
-                    In: {formatTime(r.checkInTime)}
-                    {r.checkOutTime ? ` — Out: ${formatTime(r.checkOutTime)}` : ' (active)'}
+                    PUNCH IN: {formatTime(r.checkInTime)}
+                    {r.checkOutTime ? `  |  OUT: ${formatTime(r.checkOutTime)}` : '  |  (ON SITE)'}
                   </Text>
                 </View>
-                {r.withinGeofence && <Text style={styles.geoTag}>GPS</Text>}
+                {r.withinGeofence && (
+                  <View style={styles.geoBadge}>
+                    <Text style={styles.geoTag}>GPS</Text>
+                  </View>
+                )}
               </View>
             ))
           )}
         </View>
       )}
 
-      <View style={{ height: spacing.xxl }} />
+      <View style={{ height: spacing.xxxl }} />
     </ScrollView>
   );
 }
 
 const CELL_SIZE = '14.28%' as any;
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.bg },
   monthNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     padding: spacing.md, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
-  navBtn: { padding: spacing.sm },
-  navText: { fontSize: 22, fontWeight: '600', color: colors.primary },
-  monthTitle: { ...typography.h3 },
+  navBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.line },
+  navText: { fontSize: 22, fontWeight: '700', color: colors.accent, lineHeight: 24 },
+  monthTitle: { ...typography.h3, letterSpacing: 0.8 },
+  
   statsRow: {
     flexDirection: 'row', padding: spacing.md, gap: spacing.sm,
   },
   stat: {
-    flex: 1, backgroundColor: colors.surface, padding: spacing.sm,
-    borderRadius: borderRadius.md, alignItems: 'center', ...shadows.sm,
+    flex: 1, backgroundColor: colors.surface, padding: spacing.md,
+    borderRadius: borderRadius.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
-  statNum: { fontSize: 22, fontWeight: '700', color: colors.primary },
-  statLbl: { ...typography.caption, marginTop: 1 },
+  statNum: { fontSize: 20, fontWeight: '800', fontFamily: MONO },
+  statLbl: { ...typography.caption, fontSize: 8.5, marginTop: 2, color: colors.textDim },
+
+  calendarCard: {
+    marginHorizontal: spacing.md, backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.line,
+    ...shadows.sm,
+  },
   weekRow: {
-    flexDirection: 'row', paddingHorizontal: spacing.sm, paddingBottom: spacing.xs,
+    flexDirection: 'row', paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, marginBottom: spacing.xs,
   },
   weekDay: {
-    width: CELL_SIZE, textAlign: 'center', ...typography.caption,
-    fontWeight: '600', textTransform: 'uppercase',
+    width: CELL_SIZE, textAlign: 'center', fontSize: 10,
+    fontWeight: '800', color: colors.textFaint, letterSpacing: 0.8,
   },
-  calGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.sm },
+  calGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingTop: spacing.xs },
   dayCell: {
     width: CELL_SIZE, aspectRatio: 1, alignItems: 'center',
-    justifyContent: 'center', borderRadius: borderRadius.sm, margin: 1,
+    justifyContent: 'center', borderRadius: borderRadius.sm, marginVertical: 2,
   },
-  dayCellInactive: { opacity: 0.3 },
-  dayCellToday: { backgroundColor: colors.primaryLight },
-  dayCellSelected: { backgroundColor: colors.primary },
-  dayNum: { fontSize: 14, fontWeight: '500', color: colors.text },
-  dayNumInactive: { color: colors.textLight },
-  dayNumToday: { color: colors.primary, fontWeight: '700' },
-  dayNumSelected: { color: colors.white, fontWeight: '700' },
-  dayDot: { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
+  dayCellInactive: { opacity: 0.2 },
+  dayCellToday: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.accent },
+  dayCellSelected: { backgroundColor: colors.accent, ...shadows.glowAccent },
+  dayNum: { fontSize: 13, fontWeight: '600', color: colors.text, fontFamily: MONO },
+  dayNumInactive: { color: colors.textFaint },
+  dayNumToday: { color: colors.accent, fontWeight: '800' },
+  dayNumSelected: { color: colors.onAccent, fontWeight: '900' },
+  dayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
   dayDotNormal: { backgroundColor: colors.success },
-  dayDotHigh: { backgroundColor: colors.primary },
-  recordsSection: { padding: spacing.md },
-  recordsTitle: { ...typography.body, fontWeight: '600', marginBottom: spacing.sm },
-  noRecords: { ...typography.bodySmall, textAlign: 'center', padding: spacing.lg },
+  dayDotHigh: { backgroundColor: colors.cyan },
+
+  recordsSection: { padding: spacing.md, marginTop: spacing.xs },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
+  recordsTitle: { ...typography.caption, color: colors.accent, letterSpacing: 1, fontWeight: '800' },
+  sectionLine: { flex: 1, height: 1, backgroundColor: colors.line, marginLeft: spacing.md },
+  
+  noRecordsBox: { backgroundColor: colors.surface, padding: spacing.lg, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.line, alignItems: 'center' },
+  noRecords: { ...typography.bodySmall, color: colors.textDim, textAlign: 'center' },
+  
   recordCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface,
-    padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm, ...shadows.sm,
+    padding: spacing.md, borderRadius: borderRadius.lg, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
   recordAvatar: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.primaryLight, alignItems: 'center',
-    justifyContent: 'center', marginRight: spacing.md,
+    backgroundColor: colors.surfaceAlt, alignItems: 'center',
+    justifyContent: 'center', marginRight: spacing.md, borderWidth: 1, borderColor: colors.lineBright,
   },
-  recordAvatarText: { fontSize: 16, fontWeight: '600', color: colors.primary },
+  recordAvatarText: { fontSize: 15, fontWeight: '800', color: colors.accent },
   recordInfo: { flex: 1 },
-  recordName: { ...typography.body, fontWeight: '600', fontSize: 14 },
-  recordTime: { ...typography.caption, marginTop: 1 },
-  geoTag: { fontSize: 10, fontWeight: '700', color: colors.success },
+  recordName: { ...typography.body, fontWeight: '700', fontSize: 13.5 },
+  recordTime: { fontFamily: MONO, fontSize: 10.5, color: colors.textDim, marginTop: 2 },
+  geoBadge: { backgroundColor: colors.successDim, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.xs, borderWidth: 1, borderColor: colors.success },
+  geoTag: { fontSize: 9, fontWeight: '800', color: colors.success },
 });

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors, spacing, borderRadius, typography, shadows } from '../theme';
+import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
 import { getEnrolledUsers, deleteUser } from '../services/database';
 import { maskAadhar } from '../services/aadharValidator';
 import type { RootStackParamList, EnrolledUser } from '../types';
@@ -52,8 +52,8 @@ export default function WorkerListScreen({ navigation }: Props) {
 
   const handleDelete = (user: EnrolledUser) => {
     Alert.alert(
-      'Remove Worker',
-      `Remove ${user.name} (${user.employeeId})?\n\nThis will delete their face data and cannot be undone.`,
+      'REMOVE WORKER',
+      `Delete ${user.name} (${user.employeeId}) from local biometric database?\n\nThis action cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -80,29 +80,32 @@ export default function WorkerListScreen({ navigation }: Props) {
         <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
       </View>
       <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.empId}>{item.employeeId}</Text>
-        {item.aadhar && (
-          <Text style={styles.aadhar}>{maskAadhar(item.aadhar)}</Text>
-        )}
-        <View style={styles.metaRow}>
-          <Text style={styles.meta}>Enrolled: {formatDate(item.createdAt)}</Text>
-          <View style={[styles.syncBadge, { backgroundColor: item.synced ? colors.successLight : colors.warningLight }]}>
-            <Text style={[styles.syncText, { color: item.synced ? colors.success : colors.warning }]}>
-              {item.synced ? 'Synced' : 'Pending'}
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{item.name}</Text>
+          <View style={[styles.syncBadge, { backgroundColor: item.synced ? colors.successDim : colors.warnDim, borderColor: item.synced ? colors.success : colors.warn }]}>
+            <Text style={[styles.syncText, { color: item.synced ? colors.success : colors.warn }]}>
+              {item.synced ? 'SYNCED' : 'PENDING'}
             </Text>
           </View>
         </View>
-        {item.bioHash && (
-          <View style={styles.secBadge}>
-            <Text style={styles.secBadgeText}>BioHash Protected</Text>
-          </View>
+        <Text style={styles.empId}>ID: {item.employeeId}</Text>
+        {item.aadhar && (
+          <Text style={styles.aadhar}>AADHAAR: {maskAadhar(item.aadhar)}</Text>
         )}
+        <View style={styles.metaRow}>
+          <Text style={styles.meta}>Enrolled: {formatDate(item.createdAt)}</Text>
+          {item.bioHash && (
+            <View style={styles.secBadge}>
+              <Text style={styles.secBadgeText}>🛡️ BIOHASH SECURED</Text>
+            </View>
+          )}
+        </View>
       </View>
       <TouchableOpacity
         style={styles.deleteBtn}
-        onPress={() => handleDelete(item)}>
-        <Text style={styles.deleteIcon}>{'x'}</Text>
+        onPress={() => handleDelete(item)}
+        activeOpacity={0.75}>
+        <Text style={styles.deleteIcon}>🗑️</Text>
       </TouchableOpacity>
     </View>
   );
@@ -113,30 +116,44 @@ export default function WorkerListScreen({ navigation }: Props) {
         <View style={styles.countRow}>
           <Text style={styles.count}>{filtered.length}</Text>
           <Text style={styles.countLabel}>
-            {filtered.length === users.length ? 'Workers' : `of ${users.length}`}
+            {filtered.length === users.length ? 'REGISTERED WORKERS' : `OF ${users.length} TOTAL WORKERS`}
           </Text>
         </View>
-        <TextInput
-          style={styles.searchInput}
-          value={search}
-          onChangeText={handleSearch}
-          placeholder="Search by name or ID..."
-          placeholderTextColor={colors.textLight}
-        />
+        <View style={styles.searchWrap}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            value={search}
+            onChangeText={handleSearch}
+            placeholder="Search worker by name or ID..."
+            placeholderTextColor={colors.textFaint}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => handleSearch('')}>
+              <Text style={styles.clearSearch}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <TouchableOpacity
         style={styles.addBtn}
-        onPress={() => navigation.navigate('Enroll', { role: 'worker' })}>
-        <Text style={styles.addIcon}>+</Text>
-        <Text style={styles.addText}>Add New Worker</Text>
+        onPress={() => navigation.navigate('Enroll', { role: 'worker' })}
+        activeOpacity={0.85}>
+        <Text style={styles.addIcon}>＋</Text>
+        <Text style={styles.addText}>ENROL NEW WORKER</Text>
       </TouchableOpacity>
 
       {filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>{'?'}</Text>
+          <View style={styles.emptyBadge}>
+            <Text style={styles.emptyIcon}>👥</Text>
+          </View>
           <Text style={styles.emptyText}>
-            {search ? 'No workers match your search' : 'No workers enrolled yet'}
+            {search ? 'No workers match your search query' : 'No personnel registered yet'}
+          </Text>
+          <Text style={styles.emptySubtext}>
+            Tap "Enrol New Worker" above to register facial biometric profiles.
           </Text>
         </View>
       ) : (
@@ -153,64 +170,76 @@ export default function WorkerListScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     backgroundColor: colors.surface, padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
-  countRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  count: { fontSize: 28, fontWeight: '700', color: colors.primary },
-  countLabel: { ...typography.bodySmall },
-  searchInput: {
-    backgroundColor: colors.background, borderRadius: borderRadius.md,
-    padding: spacing.sm, paddingHorizontal: spacing.md, marginTop: spacing.sm,
-    fontSize: 15, color: colors.text,
+  countRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, marginBottom: spacing.xs },
+  count: { fontSize: 24, fontWeight: '800', color: colors.accent, fontFamily: MONO },
+  countLabel: { ...typography.caption, letterSpacing: 1 },
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceAlt,
+    borderRadius: borderRadius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.line,
+    marginTop: spacing.xs,
   },
+  searchIcon: { fontSize: 13, marginRight: spacing.sm },
+  searchInput: {
+    flex: 1, height: 40, fontSize: 13.5, color: colors.text, fontFamily: MONO,
+  },
+  clearSearch: { fontSize: 14, color: colors.textDim, padding: spacing.xs },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.primary, margin: spacing.md,
+    backgroundColor: colors.accent, margin: spacing.md,
     paddingVertical: spacing.md, borderRadius: borderRadius.md,
-    gap: spacing.sm, ...shadows.md,
+    gap: spacing.sm, ...shadows.glowAccent,
   },
-  addIcon: { fontSize: 22, color: colors.white, fontWeight: '700' },
-  addText: { ...typography.button, color: colors.white },
+  addIcon: { fontSize: 20, color: colors.onAccent, fontWeight: '800' },
+  addText: { ...typography.button, color: colors.onAccent, fontSize: 13 },
   list: { padding: spacing.md, paddingTop: 0 },
   card: {
     flexDirection: 'row', backgroundColor: colors.surface,
-    borderRadius: borderRadius.md, padding: spacing.md,
-    marginBottom: spacing.sm, ...shadows.sm,
+    borderRadius: borderRadius.lg, padding: spacing.md,
+    marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
   avatar: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: colors.primaryLight, alignItems: 'center',
-    justifyContent: 'center', marginRight: spacing.md,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.surfaceAlt, alignItems: 'center',
+    justifyContent: 'center', marginRight: spacing.md, borderWidth: 1, borderColor: colors.lineBright,
   },
-  avatarText: { fontSize: 20, fontWeight: '600', color: colors.primary },
+  avatarText: { fontSize: 18, fontWeight: '800', color: colors.accent },
   info: { flex: 1 },
-  name: { ...typography.body, fontWeight: '600' },
-  empId: { ...typography.caption, marginTop: 1 },
-  aadhar: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
-  meta: { ...typography.caption },
+  nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  name: { ...typography.body, fontWeight: '700', fontSize: 14.5 },
+  empId: { fontFamily: MONO, fontSize: 11, color: colors.textDim, marginTop: 1 },
+  aadhar: { fontFamily: MONO, fontSize: 10.5, color: colors.textFaint, marginTop: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs, flexWrap: 'wrap' },
+  meta: { fontFamily: MONO, fontSize: 10, color: colors.textFaint },
   syncBadge: {
-    paddingHorizontal: spacing.sm, paddingVertical: 1,
-    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm, paddingVertical: 2,
+    borderRadius: borderRadius.xs, borderWidth: 1,
   },
-  syncText: { fontSize: 10, fontWeight: '600' },
+  syncText: { fontSize: 8.5, fontWeight: '800', letterSpacing: 0.5 },
   secBadge: {
-    backgroundColor: colors.secondaryLight, paddingHorizontal: spacing.sm,
-    paddingVertical: 1, borderRadius: borderRadius.sm, marginTop: spacing.xs,
-    alignSelf: 'flex-start',
+    backgroundColor: colors.cyanDim, paddingHorizontal: spacing.sm,
+    paddingVertical: 2, borderRadius: borderRadius.xs, borderWidth: 1, borderColor: colors.cyan,
   },
-  secBadgeText: { fontSize: 10, fontWeight: '600', color: colors.secondary },
+  secBadgeText: { fontSize: 8.5, fontWeight: '800', color: colors.cyan, letterSpacing: 0.5 },
   deleteBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.errorLight, alignItems: 'center',
-    justifyContent: 'center', alignSelf: 'center',
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: colors.surfaceAlt, alignItems: 'center',
+    justifyContent: 'center', alignSelf: 'center', marginLeft: spacing.sm,
+    borderWidth: 1, borderColor: colors.line,
   },
-  deleteIcon: { fontSize: 16, fontWeight: '700', color: colors.error },
+  deleteIcon: { fontSize: 14 },
   empty: {
     flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl,
   },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { ...typography.body, marginTop: spacing.md, textAlign: 'center' },
+  emptyBadge: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: colors.line,
+  },
+  emptyIcon: { fontSize: 32 },
+  emptyText: { ...typography.h3, marginTop: spacing.md, textAlign: 'center' },
+  emptySubtext: { ...typography.bodySmall, marginTop: spacing.xs, textAlign: 'center', maxWidth: 260 },
 });
