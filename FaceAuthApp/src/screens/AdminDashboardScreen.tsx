@@ -99,12 +99,17 @@ export default function AdminDashboardScreen({ navigation }: Props) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      {/* Header */}
+      {/* Admin Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.headerTitle}>Admin Console</Text>
-            <Text style={styles.headerSub}>Logged in as {session?.userName || 'Administrator'}</Text>
+            <View style={styles.adminBadgeRow}>
+              <Text style={styles.headerTitle}>Admin Console</Text>
+              <View style={styles.adminBadge}>
+                <Text style={styles.adminBadgeText}>SUPERVISOR</Text>
+              </View>
+            </View>
+            <Text style={styles.headerSub}>Officer: {session?.userName || 'Administrator'}</Text>
           </View>
           <View style={[styles.statusPill, { backgroundColor: online ? colors.successDim : colors.dangerDim, borderColor: online ? '#BBF7D0' : '#FECACA' }]}>
             <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.danger }]} />
@@ -115,10 +120,10 @@ export default function AdminDashboardScreen({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Stats Grid */}
+      {/* KPI Overview Tiles */}
       <View style={styles.statsGrid}>
         {[
-          { label: 'Enrolled', value: stats.enrolled, color: colors.accent },
+          { label: 'Registered', value: stats.enrolled, color: colors.accent },
           { label: 'On Site', value: stats.onSite, color: colors.success },
           { label: 'Scans Today', value: stats.todayAuth, color: colors.cyan },
           { label: 'Success %', value: `${stats.successRate}%`, color: colors.warn },
@@ -132,34 +137,103 @@ export default function AdminDashboardScreen({ navigation }: Props) {
         ))}
       </View>
 
-      {/* Management Section */}
+      {/* Section 1: Personnel & Enrolment */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Personnel & Management</Text>
+        <Text style={styles.sectionTitle}>Worker Management</Text>
 
-        {[
-          { title: 'Worker Directory', sub: 'View, search, or remove registered workers', screen: 'WorkerList' as const, icon: '👥' },
-          { title: 'Attendance Calendar', sub: 'Inspect daily shift logs and working hours', screen: 'Calendar' as const, icon: '📅' },
-          { title: 'Enrol New Worker', sub: 'Register new face template + Aadhaar', screen: 'Enroll' as const, icon: '➕' },
-          { title: 'Authentication Audit Trail', sub: 'Facial verification attempt logs', screen: 'History' as const, icon: '📜' },
-        ].map((item, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.menuCard}
-            onPress={() => navigation.navigate(item.screen)}
-            activeOpacity={0.8}>
-            <Text style={styles.menuIcon}>{item.icon}</Text>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <Text style={styles.menuSub}>{item.sub}</Text>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Enroll', { role: 'worker' })}
+          activeOpacity={0.8}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.accentDim }]}>
+            <Text style={styles.menuIconText}>➕</Text>
+          </View>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuTitle}>Enrol New Worker</Text>
+            <Text style={styles.menuSub}>Register face biometric & Aadhaar profile</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('WorkerList')}
+          activeOpacity={0.8}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.cyanDim }]}>
+            <Text style={styles.menuIconText}>👥</Text>
+          </View>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuTitle}>Worker Directory</Text>
+            <Text style={styles.menuSub}>View, search, or remove registered workers ({stats.enrolled})</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Server Sync Section */}
+      {/* Section 2: Reports & Analytics */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Server Sync & Storage</Text>
+        <Text style={styles.sectionTitle}>Reports & Audits</Text>
+
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Dashboard')}
+          activeOpacity={0.8}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.successDim }]}>
+            <Text style={styles.menuIconText}>📊</Text>
+          </View>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuTitle}>System Analytics & KPIs</Text>
+            <Text style={styles.menuSub}>7-day trend, match accuracy & latency meters</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Calendar')}
+          activeOpacity={0.8}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.accentDim }]}>
+            <Text style={styles.menuIconText}>📅</Text>
+          </View>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuTitle}>Attendance Calendar</Text>
+            <Text style={styles.menuSub}>Inspect daily shift logs and working hours</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('History')}
+          activeOpacity={0.8}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.infoDim }]}>
+            <Text style={styles.menuIconText}>📜</Text>
+          </View>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuTitle}>Authentication Audit Trail</Text>
+            <Text style={styles.menuSub}>Real-time scan attempt logs and anti-spoof records</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Section 3: Configuration & System Control */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>System Settings & Sync</Text>
+
+        <TouchableOpacity
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.8}>
+          <View style={[styles.menuIconWrap, { backgroundColor: colors.surfaceAlt }]}>
+            <Text style={styles.menuIconText}>⚙️</Text>
+          </View>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuTitle}>System & Geofence Settings</Text>
+            <Text style={styles.menuSub}>Geofence sites, voice prompts, server URL & retention</Text>
+          </View>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
 
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -170,7 +244,7 @@ export default function AdminDashboardScreen({ navigation }: Props) {
             {syncing ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.actionBtnText}>Sync to Server</Text>
+              <Text style={styles.actionBtnText}>Sync to Cloud</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity
@@ -180,12 +254,12 @@ export default function AdminDashboardScreen({ navigation }: Props) {
             <Text style={[styles.actionBtnText, { color: colors.text }]}>Purge Old Data</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.storageText}>Local Encrypted Database: {stats.storageKB} KB</Text>
+        <Text style={styles.storageText}>Local Encrypted DB Size: {stats.storageKB} KB</Text>
       </View>
 
-      {/* Logout */}
+      {/* Logout / Exit Admin Mode */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-        <Text style={styles.logoutText}>Log Out from Admin</Text>
+        <Text style={styles.logoutText}>Exit Admin Console</Text>
       </TouchableOpacity>
 
       <View style={{ height: spacing.xxl }} />
@@ -200,7 +274,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl, borderBottomWidth: 1, borderBottomColor: colors.line,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  adminBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+  adminBadge: { backgroundColor: colors.accentDim, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.xs, borderWidth: 1, borderColor: '#FED7AA' },
+  adminBadgeText: { fontSize: 9.5, fontWeight: '800', color: colors.accent },
   headerSub: { fontSize: 12, color: colors.textDim, marginTop: 2 },
   statusPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.full, gap: 5, borderWidth: 1 },
   dot: { width: 6, height: 6, borderRadius: 3 },
@@ -225,13 +302,17 @@ const styles = StyleSheet.create({
     padding: spacing.md, borderRadius: borderRadius.md, marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.line, ...shadows.sm,
   },
-  menuIcon: { fontSize: 22, marginRight: spacing.md },
+  menuIconWrap: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center', marginRight: spacing.md,
+  },
+  menuIconText: { fontSize: 18 },
   menuContent: { flex: 1 },
   menuTitle: { fontSize: 14.5, fontWeight: '700', color: colors.text },
   menuSub: { fontSize: 12, color: colors.textDim, marginTop: 1 },
   menuArrow: { fontSize: 22, color: colors.textFaint, fontWeight: '300' },
 
-  actionRow: { flexDirection: 'row', gap: spacing.sm },
+  actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   actionBtn: {
     flex: 1, paddingVertical: spacing.md, borderRadius: borderRadius.md,
     alignItems: 'center', justifyContent: 'center', ...shadows.sm,

@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, borderRadius, typography, shadows, MONO } from '../theme';
 import { getEnrolledUsers, getAuthLogs, getTodayAttendance } from '../services/database';
 import { isOnline } from '../services/syncService';
+import { getSession } from '../auth/sessionStore';
 import type { RootStackParamList } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -52,11 +53,20 @@ export default function HomeScreen({ navigation }: Props) {
 
   const navTo = (screen: keyof RootStackParamList) => () => navigation.navigate(screen as any);
 
+  const handleAdminPress = () => {
+    const session = getSession();
+    if (session && session.role === 'admin') {
+      navigation.navigate('AdminDashboard');
+    } else {
+      navigation.navigate('AdminLogin');
+    }
+  };
+
   return (
     <View style={s.root}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
+      {/* Official Header */}
       <View style={s.header}>
         <View style={s.headerLeft}>
           <View style={s.logoRow}>
@@ -87,30 +97,31 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
-        {/* KPI Stats Grid */}
+        {/* Today's Shift Status Summary Ribbon */}
         <View style={s.statsRow}>
-          {[
-            { val: userCount, label: 'Enrolled', color: colors.accent, bg: colors.accentDim },
-            { val: onSiteCount, label: 'On Site', color: colors.success, bg: colors.successDim },
-            { val: todayCount, label: 'Scans', color: colors.cyan, bg: colors.cyanDim },
-            { val: `${successRate}%`, label: 'Success', color: colors.warn, bg: colors.warnDim },
-          ].map((stat, i) => (
-            <View key={i} style={s.statCard}>
-              <Text style={[s.statVal, { color: stat.color }]}>{stat.val}</Text>
-              <Text style={s.statLabel}>{stat.label}</Text>
-            </View>
-          ))}
+          <View style={s.statCard}>
+            <Text style={[s.statVal, { color: colors.success }]}>{onSiteCount}</Text>
+            <Text style={s.statLabel}>Workers On Site</Text>
+          </View>
+          <View style={s.statCard}>
+            <Text style={[s.statVal, { color: colors.cyan }]}>{todayCount}</Text>
+            <Text style={s.statLabel}>Scans Today</Text>
+          </View>
+          <View style={s.statCard}>
+            <Text style={[s.statVal, { color: colors.accent }]}>{successRate}%</Text>
+            <Text style={s.statLabel}>Match Rate</Text>
+          </View>
         </View>
 
-        {/* Primary Action Button (Main Focus) */}
+        {/* Primary Hero Action: Biometric Facial Scan */}
         <TouchableOpacity style={s.heroScanBtn} onPress={navTo('Authenticate')} activeOpacity={0.88}>
           <View style={s.heroScanLeft}>
             <View style={s.heroScanIconWrap}>
               <Text style={s.heroScanIcon}>◎</Text>
             </View>
             <View style={s.heroScanTextWrap}>
-              <Text style={s.heroScanTitle}>Scan Face</Text>
-              <Text style={s.heroScanSub}>Liveness + Anti-Spoof Authentication</Text>
+              <Text style={s.heroScanTitle}>Scan Face & Verify</Text>
+              <Text style={s.heroScanSub}>Liveness + Anti-Spoof Biometric Check</Text>
             </View>
           </View>
           <View style={s.heroScanArrow}>
@@ -118,91 +129,66 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         </TouchableOpacity>
 
-        {/* Section Heading */}
-        <Text style={s.sectionTitle}>Main Actions</Text>
+        {/* Worker Day-to-Day Operations Section */}
+        <Text style={s.sectionTitle}>Field Operations</Text>
 
-        {/* Other Operations */}
         <View style={s.actionsGrid}>
+          {/* Attendance Punch Card */}
           <TouchableOpacity style={s.actionCard} onPress={navTo('Attendance')} activeOpacity={0.8}>
             <View style={[s.actionIconWrap, { backgroundColor: colors.successDim }]}>
               <Text style={[s.actionIcon, { color: colors.success }]}>✓</Text>
             </View>
             <View style={s.actionTextWrap}>
-              <Text style={s.actionTitle}>Attendance</Text>
-              <Text style={s.actionSub}>Check-in / Check-out with GPS</Text>
+              <Text style={s.actionTitle}>Mark Attendance</Text>
+              <Text style={s.actionSub}>Check-in / Check-out with GPS verification</Text>
             </View>
             <Text style={s.actionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.actionCard} onPress={navTo('Enroll')} activeOpacity={0.8}>
-            <View style={[s.actionIconWrap, { backgroundColor: colors.cyanDim }]}>
-              <Text style={[s.actionIcon, { color: colors.cyan }]}>＋</Text>
-            </View>
-            <View style={s.actionTextWrap}>
-              <Text style={s.actionTitle}>Enrol Worker</Text>
-              <Text style={s.actionSub}>Register new face & Aadhaar</Text>
-            </View>
-            <Text style={s.actionArrow}>›</Text>
-          </TouchableOpacity>
-
+          {/* PPE Safety Compliance Card */}
           <TouchableOpacity style={s.actionCard} onPress={navTo('PPECheck')} activeOpacity={0.8}>
             <View style={[s.actionIconWrap, { backgroundColor: colors.warnDim }]}>
               <Text style={[s.actionIcon, { color: colors.warn }]}>🛡️</Text>
             </View>
             <View style={s.actionTextWrap}>
               <Text style={s.actionTitle}>PPE Safety Check</Text>
-              <Text style={s.actionSub}>Verify helmet & safety vest</Text>
+              <Text style={s.actionSub}>Verify safety helmet & high-vis vest before entry</Text>
             </View>
             <Text style={s.actionArrow}>›</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Nav Matrix */}
-        <Text style={s.sectionTitle}>Quick Access</Text>
-        <View style={s.gridRow}>
-          {[
-            { label: 'Workers', icon: '👥', screen: 'WorkerList' as const, color: colors.cyan, bg: colors.cyanDim },
-            { label: 'Calendar', icon: '📅', screen: 'Calendar' as const, color: colors.accent, bg: colors.accentDim },
-            { label: 'Analytics', icon: '📊', screen: 'Dashboard' as const, color: colors.success, bg: colors.successDim },
-          ].map((item, i) => (
-            <TouchableOpacity key={i} style={s.gridCard} onPress={navTo(item.screen)} activeOpacity={0.75}>
-              <View style={[s.gridIconWrap, { backgroundColor: item.bg }]}>
-                <Text style={s.gridIconText}>{item.icon}</Text>
-              </View>
-              <Text style={s.gridLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Admin & Supervisor Portal Card (Protected by Login) */}
+        <Text style={s.sectionTitle}>Administration & Control</Text>
+        
+        <TouchableOpacity style={s.adminCard} onPress={handleAdminPress} activeOpacity={0.85}>
+          <View style={s.adminIconWrap}>
+            <Text style={s.adminIcon}>🔐</Text>
+          </View>
+          <View style={s.adminTextWrap}>
+            <Text style={s.adminTitle}>Admin & Supervisor Portal</Text>
+            <Text style={s.adminSub}>
+              Enrol workers, directory, analytics, geofencing & server sync
+            </Text>
+          </View>
+          <View style={s.adminBadgePill}>
+            <Text style={s.adminBadgeText}>ADMIN</Text>
+          </View>
+        </TouchableOpacity>
 
-        <View style={s.gridRow}>
-          {[
-            { label: 'History', icon: '📜', screen: 'History' as const, color: colors.info, bg: colors.infoDim },
-            { label: 'Admin', icon: '🔐', screen: 'AdminLogin' as const, color: colors.warn, bg: colors.warnDim },
-            { label: 'Settings', icon: '⚙️', screen: 'Settings' as const, color: colors.textDim, bg: colors.surfaceAlt },
-          ].map((item, i) => (
-            <TouchableOpacity key={i} style={s.gridCard} onPress={navTo(item.screen)} activeOpacity={0.75}>
-              <View style={[s.gridIconWrap, { backgroundColor: item.bg }]}>
-                <Text style={s.gridIconText}>{item.icon}</Text>
-              </View>
-              <Text style={s.gridLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Security & System Info */}
+        {/* System & Privacy Badges */}
         <View style={s.infoCard}>
-          <Text style={s.infoLabel}>Security & Privacy</Text>
+          <Text style={s.infoLabel}>Protected by NHAI Security Architecture</Text>
           <View style={s.tagRow}>
             {[
-              { t: 'AES-256 Encrypted', c: colors.textDim },
-              { t: 'BioHash ISO 24745', c: colors.cyan },
-              { t: 'Differential Privacy', c: colors.success },
-              { t: 'Offline Engine', c: colors.accent },
-              { t: 'GPS Geofenced', c: colors.warn },
-              { t: 'Anti-Spoof Protected', c: colors.danger },
+              { t: 'Offline Face Engine' },
+              { t: 'ISO 24745 BioHash' },
+              { t: 'Differential Privacy' },
+              { t: 'AES-256 Encrypted' },
+              { t: 'GPS Geofenced' },
             ].map((tag, i) => (
               <View key={i} style={s.tag}>
-                <Text style={[s.tagText, { color: tag.c }]}>{tag.t}</Text>
+                <Text style={s.tagText}>{tag.t}</Text>
               </View>
             ))}
           </View>
@@ -294,18 +280,25 @@ const s = StyleSheet.create({
   actionSub: { fontSize: 12, color: colors.textDim, marginTop: 1 },
   actionArrow: { fontSize: 22, color: colors.textFaint, fontWeight: '300', marginLeft: spacing.sm },
 
-  gridRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  gridCard: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: borderRadius.md,
-    paddingVertical: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.line,
+  adminCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFDF9',
+    borderRadius: borderRadius.md, padding: spacing.md, borderWidth: 1, borderColor: '#FED7AA',
     ...shadows.sm,
   },
-  gridIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs,
+  adminIconWrap: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.accentDim, alignItems: 'center',
+    justifyContent: 'center', marginRight: spacing.md,
   },
-  gridIconText: { fontSize: 18 },
-  gridLabel: { fontSize: 12, fontWeight: '600', color: colors.text },
+  adminIcon: { fontSize: 20 },
+  adminTextWrap: { flex: 1 },
+  adminTitle: { fontSize: 14.5, fontWeight: '700', color: colors.accent },
+  adminSub: { fontSize: 11.5, color: colors.textDim, marginTop: 1 },
+  adminBadgePill: {
+    backgroundColor: colors.accentDim, paddingHorizontal: spacing.sm + 2, paddingVertical: 4,
+    borderRadius: borderRadius.xs, borderWidth: 1, borderColor: '#FED7AA', marginLeft: spacing.sm,
+  },
+  adminBadgeText: { fontSize: 10, fontWeight: '800', color: colors.accent, letterSpacing: 0.5 },
 
   infoCard: {
     backgroundColor: '#FFFFFF', borderRadius: borderRadius.md,
@@ -318,5 +311,5 @@ const s = StyleSheet.create({
     backgroundColor: colors.surfaceAlt, paddingHorizontal: spacing.sm + 2, paddingVertical: 4,
     borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.line,
   },
-  tagText: { fontSize: 11, fontWeight: '600' },
+  tagText: { fontSize: 11, fontWeight: '600', color: colors.textDim },
 });
