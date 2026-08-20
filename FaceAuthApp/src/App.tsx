@@ -103,7 +103,8 @@ export default function App() {
           screenOptions={{
             headerStyle: { backgroundColor: '#FFFFFF' },
             headerTintColor: colors.accent,
-            headerTitleStyle: { ...typography.h3, color: colors.text, fontSize: 17 },
+            headerTitleStyle: { ...typography.h3, color: colors.text, fontSize: 16 },
+            headerBackButtonDisplayMode: 'minimal',
             headerShadowVisible: false,
             animation: 'slide_from_right',
             contentStyle: { backgroundColor: colors.bg },

@@ -7,7 +7,7 @@ interface IconProps {
 }
 
 /** Modern Attendance / Chart Icon */
-export function IconAttendance({ size = 24, color = '#2563EB' }: IconProps) {
+export function IconAttendance({ size = 24, color = '#2C3540' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={styles.chartWrap}>
@@ -21,7 +21,7 @@ export function IconAttendance({ size = 24, color = '#2563EB' }: IconProps) {
 }
 
 /** Modern Safety / Hard Hat / Shield Icon */
-export function IconSafety({ size = 24, color = '#16A34A' }: IconProps) {
+export function IconSafety({ size = 24, color = '#2C3540' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={[styles.shieldOuter, { borderColor: color }]}>
@@ -31,21 +31,22 @@ export function IconSafety({ size = 24, color = '#16A34A' }: IconProps) {
   );
 }
 
-/** Modern Leave / Plane Icon */
-export function IconLeave({ size = 24, color = '#EA580C' }: IconProps) {
+/** Modern Leave / Plane Icon — points right */
+export function IconLeave({ size = 24, color = '#1B4F72' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={styles.planeWrap}>
         <View style={[styles.planeBody, { backgroundColor: color }]} />
         <View style={[styles.planeWing, { backgroundColor: color }]} />
         <View style={[styles.planeTail, { backgroundColor: color }]} />
+        <View style={[styles.planeNose, { borderLeftColor: color }]} />
       </View>
     </View>
   );
 }
 
 /** Modern Holidays / Sunset Icon */
-export function IconHolidays({ size = 24, color = '#9333EA' }: IconProps) {
+export function IconHolidays({ size = 24, color = '#2C3540' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={styles.sunWrap}>
@@ -57,20 +58,27 @@ export function IconHolidays({ size = 24, color = '#9333EA' }: IconProps) {
   );
 }
 
-/** Modern Dashboard / Grid Tab Icon */
-export function IconDashboard({ size = 22, color = '#2563EB' }: IconProps) {
+/** Modern Dashboard / Grid Tab Icon — clean 2x2, no overflow dots */
+export function IconDashboard({ size = 22, color = '#2C3540' }: IconProps) {
+  const gap = 2.5;
+  const box = Math.max(5, (size - gap) / 2);
+  const cell = { width: box, height: box, borderRadius: 2, backgroundColor: color };
   return (
-    <View style={[styles.gridWrap, { width: size, height: size }]}>
-      <View style={[styles.gridBox, { backgroundColor: color }]} />
-      <View style={[styles.gridBox, { backgroundColor: color }]} />
-      <View style={[styles.gridBox, { backgroundColor: color }]} />
-      <View style={[styles.gridBox, { backgroundColor: color }]} />
+    <View style={{ width: size, height: size, justifyContent: 'space-between' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={cell} />
+        <View style={cell} />
+      </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={cell} />
+        <View style={cell} />
+      </View>
     </View>
   );
 }
 
 /** Modern Profile / User Tab Icon */
-export function IconProfile({ size = 22, color = '#2563EB' }: IconProps) {
+export function IconProfile({ size = 22, color = '#2C3540' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={[styles.userHead, { backgroundColor: color }]} />
@@ -80,7 +88,7 @@ export function IconProfile({ size = 22, color = '#2563EB' }: IconProps) {
 }
 
 /** Modern More / Options Tab Icon */
-export function IconMore({ size = 22, color = '#2563EB' }: IconProps) {
+export function IconMore({ size = 22, color = '#2C3540' }: IconProps) {
   return (
     <View style={[styles.moreWrap, { width: size, height: size }]}>
       <View style={[styles.moreDot, { backgroundColor: color }]} />
@@ -104,7 +112,7 @@ export function IconFaceScan({ size = 24, color = '#FFFFFF' }: IconProps) {
 }
 
 /** Modern Bell Icon */
-export function IconBell({ size = 20, color = '#0F172A' }: IconProps) {
+export function IconBell({ size = 20, color = '#2C3540' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={[styles.bellDome, { backgroundColor: color }]} />
@@ -115,7 +123,7 @@ export function IconBell({ size = 20, color = '#0F172A' }: IconProps) {
 }
 
 /** Modern Lock / Security Icon */
-export function IconLock({ size = 16, color = '#EA580C' }: IconProps) {
+export function IconLock({ size = 16, color = '#1B4F72' }: IconProps) {
   return (
     <View style={[styles.center, { width: size, height: size }]}>
       <View style={[styles.lockShackle, { borderColor: color }]} />
@@ -125,7 +133,7 @@ export function IconLock({ size = 16, color = '#EA580C' }: IconProps) {
 }
 
 /** Modern Check In / Check Out Arrow */
-export function IconArrowIn({ size = 16, color = '#4ADE80' }: IconProps) {
+export function IconArrowIn({ size = 16, color = '#4F6B52' }: IconProps) {
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ fontSize: size - 2, fontWeight: '900', color }}>↙</Text>
@@ -133,7 +141,7 @@ export function IconArrowIn({ size = 16, color = '#4ADE80' }: IconProps) {
   );
 }
 
-export function IconArrowOut({ size = 16, color = '#F87171' }: IconProps) {
+export function IconArrowOut({ size = 16, color = '#A35448' }: IconProps) {
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ fontSize: size - 2, fontWeight: '900', color }}>↗</Text>
@@ -164,11 +172,29 @@ const styles = StyleSheet.create({
   shieldOuter: { width: 16, height: 18, borderWidth: 2, borderRadius: 4, borderBottomLeftRadius: 9, borderBottomRightRadius: 9, alignItems: 'center', justifyContent: 'center' },
   shieldInner: { width: 6, height: 7, borderRadius: 2 },
 
-  /* Plane Icon */
-  planeWrap: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-45deg' }] },
-  planeBody: { width: 4, height: 16, borderRadius: 2 },
-  planeWing: { position: 'absolute', top: 6, width: 16, height: 3.5, borderRadius: 1.5 },
-  planeTail: { position: 'absolute', bottom: 1, width: 8, height: 2.5, borderRadius: 1 },
+  /* Plane — 45° up-right */
+  planeWrap: {
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ rotate: '-45deg' }],
+  },
+  planeBody: { width: 14, height: 3.5, borderRadius: 2, marginRight: 3 },
+  planeWing: { position: 'absolute', left: 5, top: 2, width: 3.5, height: 12, borderRadius: 1.5 },
+  planeTail: { position: 'absolute', left: 1, top: 4, width: 2.5, height: 8, borderRadius: 1 },
+  planeNose: {
+    position: 'absolute',
+    right: 0,
+    top: 5,
+    width: 0,
+    height: 0,
+    borderTopWidth: 3.5,
+    borderBottomWidth: 3.5,
+    borderLeftWidth: 5,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+  },
 
   /* Sun Icon */
   sunWrap: { width: 18, height: 16, alignItems: 'center', justifyContent: 'center' },
@@ -176,9 +202,7 @@ const styles = StyleSheet.create({
   sunLine1: { width: 16, height: 2, borderRadius: 1, marginBottom: 1.5 },
   sunLine2: { width: 10, height: 2, borderRadius: 1 },
 
-  /* Dashboard Grid */
-  gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 2.5, alignItems: 'center', justifyContent: 'center', padding: 2 },
-  gridBox: { width: 7, height: 7, borderRadius: 2 },
+  /* Dashboard Grid (layout handled inline) */
 
   /* Profile User */
   userHead: { width: 8, height: 8, borderRadius: 4, marginBottom: 1.5 },

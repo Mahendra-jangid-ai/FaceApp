@@ -17,73 +17,69 @@ export const fonts = {
 };
 
 export const colors = {
-  // Clean Modern Palette
-  bg: '#F8FAFC',
+  bg: '#FFFFFF',
   bgElevated: '#FFFFFF',
   surface: '#FFFFFF',
-  surfaceAlt: '#F1F5F9',
-  surfaceHover: '#E2E8F0',
-  line: '#E2E8F0',
-  lineBright: '#CBD5E1',
+  surfaceAlt: '#F4F6F8',
+  surfaceHover: '#EEF0F3',
+  line: '#E6E8EC',
+  lineBright: '#D5D8DE',
 
-  // FaceAuth Core Brand
-  primary: '#2563EB',          // Vibrant Royal Blue
-  primaryDim: '#EFF6FF',
-  primaryDark: '#1D4ED8',
-  
-  accent: '#EA580C',           // Energetic Saffron Orange
-  accentDim: '#FFF7ED',        // Soft Warm Cream
-  accentGlow: 'rgba(234, 88, 12, 0.14)',
+  primary: '#1B4F72',
+  primaryDim: '#EEF3F7',
+  primaryDark: '#163E59',
 
-  navy: '#0F172A',             // Slate Midnight
-  navyDim: '#1E293B',
+  accent: '#1B4F72',
+  accentDim: '#EEF3F7',
+  accentGlow: 'rgba(27, 79, 114, 0.10)',
 
-  cyan: '#0284C7',             // Modern Sky Blue
-  cyanDim: '#F0F9FF',
-  cyanGlow: 'rgba(2, 132, 199, 0.14)',
+  navy: '#2C3540',
+  navyDim: '#3D4854',
 
-  success: '#16A34A',          // Forest Emerald Green
-  successDim: '#F0FDF4',
-  successGlow: 'rgba(22, 163, 74, 0.14)',
+  cyan: '#2E6A86',
+  cyanDim: '#EEF3F7',
+  cyanGlow: 'rgba(46, 106, 134, 0.10)',
 
-  warn: '#D97706',             // Amber
-  warnDim: '#FFFBEB',
-  warnGlow: 'rgba(217, 119, 6, 0.14)',
+  success: '#2F6B4F',
+  successDim: '#F0F5F2',
+  successGlow: 'rgba(47, 107, 79, 0.10)',
 
-  danger: '#DC2626',           // Clean Crimson
-  dangerDim: '#FEF2F2',
-  dangerGlow: 'rgba(220, 38, 38, 0.14)',
+  warn: '#8A6230',
+  warnDim: '#F7F3EE',
+  warnGlow: 'rgba(138, 98, 48, 0.10)',
 
-  purple: '#7C3AED',
-  purpleDim: '#F5F3FF',
+  danger: '#9A4338',
+  dangerDim: '#F7F1F0',
+  dangerGlow: 'rgba(154, 67, 56, 0.10)',
 
-  info: '#0284C7',
-  infoDim: '#F0F9FF',
+  purple: '#4A5568',
+  purpleDim: '#F4F6F8',
 
-  // Text Colors
-  text: '#0F172A',
-  textDim: '#475569',
-  textFaint: '#94A3B8',
-  textMuted: '#64748B',
+  info: '#2E6A86',
+  infoDim: '#EEF3F7',
+
+  text: '#2C3540',
+  textDim: '#5B6570',
+  textFaint: '#8B939C',
+  textMuted: '#6B7280',
   onAccent: '#FFFFFF',
   white: '#FFFFFF',
-  black: '#000000',
+  black: '#2C3540',
 
-  // Legacy compat aliases
-  primaryLight: '#EFF6FF',
-  secondary: '#0284C7',
-  secondaryLight: '#F0F9FF',
-  background: '#F8FAFC',
+  primaryLight: '#EEF3F7',
+  secondary: '#2E6A86',
+  secondaryLight: '#EEF3F7',
+  background: '#FFFFFF',
   card: '#FFFFFF',
-  textSecondary: '#475569',
-  textLight: '#94A3B8',
-  error: '#DC2626',
-  errorLight: '#FEF2F2',
-  warning: '#D97706',
-  warningLight: '#FFFBEB',
-  successLight: '#F0FDF4',
-  border: '#E2E8F0',
-  overlay: 'rgba(15, 23, 42, 0.70)',
+  textSecondary: '#5B6570',
+  textLight: '#8B939C',
+  error: '#9A4338',
+  errorLight: '#F7F1F0',
+  warning: '#8A6230',
+  warningLight: '#F7F3EE',
+  successLight: '#F0F5F2',
+  border: '#E6E8EC',
+  overlay: 'rgba(44, 53, 64, 0.45)',
 };
 
 export const spacing = {
@@ -97,12 +93,12 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  xs: 6,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
+  xs: 4,
+  sm: 6,
+  md: 10,
+  lg: 12,
+  xl: 14,
+  xxl: 18,
   full: 999,
 };
 
@@ -119,9 +115,9 @@ export const typography = {
 };
 
 export const shadows = {
-  sm: { elevation: 1, shadowColor: '#0F172A', shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-  md: { elevation: 2.5, shadowColor: '#0F172A', shadowOpacity: 0.07, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
-  lg: { elevation: 4.5, shadowColor: '#0F172A', shadowOpacity: 0.10, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
+  sm: { elevation: 1, shadowColor: '#2C3540', shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+  md: { elevation: 2, shadowColor: '#2C3540', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  lg: { elevation: 3, shadowColor: '#2C3540', shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } },
   glowAccent: { elevation: 3, shadowColor: colors.accent, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   glowPrimary: { elevation: 3, shadowColor: colors.primary, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   glowSuccess: { elevation: 3, shadowColor: colors.success, shadowOpacity: 0.20, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },

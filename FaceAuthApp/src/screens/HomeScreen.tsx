@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors, spacing, borderRadius, shadows, fonts, MONO } from '../theme';
+import { spacing, fonts } from '../theme';
 import {
   getEnrolledUsers,
   getAuthLogs,
@@ -130,8 +130,8 @@ export default function HomeScreen({ navigation }: Props) {
           style={s.quickActionItem}
           onPress={() => navigation.navigate('Authenticate')}
           activeOpacity={0.75}>
-          <View style={[s.quickActionIconWrap, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-            <IconAttendance size={22} color="#2563EB" />
+          <View style={s.quickActionIconWrap}>
+            <IconAttendance size={22} color="#2C3540" />
           </View>
           <Text style={s.quickActionLabel}>Attendance</Text>
         </TouchableOpacity>
@@ -140,8 +140,8 @@ export default function HomeScreen({ navigation }: Props) {
           style={s.quickActionItem}
           onPress={() => navigation.navigate('PPECheck')}
           activeOpacity={0.75}>
-          <View style={[s.quickActionIconWrap, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
-            <IconSafety size={22} color="#16A34A" />
+          <View style={s.quickActionIconWrap}>
+            <IconSafety size={22} color="#2C3540" />
           </View>
           <Text style={s.quickActionLabel}>PPE Safety</Text>
         </TouchableOpacity>
@@ -150,8 +150,8 @@ export default function HomeScreen({ navigation }: Props) {
           style={s.quickActionItem}
           onPress={() => setActiveTab('attendance')}
           activeOpacity={0.75}>
-          <View style={[s.quickActionIconWrap, { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }]}>
-            <IconLeave size={22} color="#EA580C" />
+          <View style={s.quickActionIconWrap}>
+            <IconLeave size={22} color="#1B4F72" />
           </View>
           <Text style={s.quickActionLabel}>Leave</Text>
         </TouchableOpacity>
@@ -160,8 +160,8 @@ export default function HomeScreen({ navigation }: Props) {
           style={s.quickActionItem}
           onPress={() => navigation.navigate('Calendar')}
           activeOpacity={0.75}>
-          <View style={[s.quickActionIconWrap, { backgroundColor: '#FAF5FF', borderColor: '#E9D5FF' }]}>
-            <IconHolidays size={22} color="#9333EA" />
+          <View style={s.quickActionIconWrap}>
+            <IconHolidays size={22} color="#2C3540" />
           </View>
           <Text style={s.quickActionLabel}>Holidays</Text>
         </TouchableOpacity>
@@ -197,7 +197,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.ribbonCol}>
             <Text style={s.ribbonLabel}>Check In</Text>
             <View style={s.ribbonValueRow}>
-              <IconArrowIn size={14} color="#4ADE80" />
+              <IconArrowIn size={14} color="#4F6B52" />
               <Text style={s.ribbonValue}>10:14 AM</Text>
             </View>
           </View>
@@ -207,7 +207,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.ribbonCol}>
             <Text style={s.ribbonLabel}>Check Out</Text>
             <View style={s.ribbonValueRow}>
-              <IconArrowOut size={14} color="#F87171" />
+              <IconArrowOut size={14} color="#A35448" />
               <Text style={s.ribbonValue}>06:31 PM</Text>
             </View>
           </View>
@@ -217,7 +217,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.ribbonCol}>
             <Text style={s.ribbonLabel}>Short Hours</Text>
             <View style={s.ribbonValueRow}>
-              <IconClock size={12} color="#94A3B8" />
+              <IconClock size={12} color="#8A8378" />
               <Text style={s.ribbonValue}>00:00</Text>
             </View>
           </View>
@@ -236,7 +236,7 @@ export default function HomeScreen({ navigation }: Props) {
       {/* 3. Monthly Overview Section */}
       <View style={s.overviewHeader}>
         <View style={s.overviewTitleRow}>
-          <IconAttendance size={18} color="#0F172A" />
+          <IconAttendance size={18} color="#2C3540" />
           <Text style={s.overviewTitle}>Overview</Text>
         </View>
         <Text style={s.overviewMonth}>August 2026</Text>
@@ -246,34 +246,22 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={s.overviewGrid}>
         <View style={s.overviewCard}>
           <Text style={s.overviewVal}>14</Text>
-          <View style={[s.overviewPill, { backgroundColor: '#ECFDF5' }]}>
-            <View style={[s.pillDot, { backgroundColor: '#10B981' }]} />
-            <Text style={[s.pillLabel, { color: '#059669' }]}>Presence</Text>
-          </View>
+          <Text style={s.overviewLabel}>Presence</Text>
         </View>
 
         <View style={s.overviewCard}>
           <Text style={s.overviewVal}>00</Text>
-          <View style={[s.overviewPill, { backgroundColor: '#FEF2F2' }]}>
-            <View style={[s.pillDot, { backgroundColor: '#EF4444' }]} />
-            <Text style={[s.pillLabel, { color: '#DC2626' }]}>Absence</Text>
-          </View>
+          <Text style={s.overviewLabel}>Absence</Text>
         </View>
 
         <View style={s.overviewCard}>
           <Text style={s.overviewVal}>00</Text>
-          <View style={[s.overviewPill, { backgroundColor: '#F5F3FF' }]}>
-            <View style={[s.pillDot, { backgroundColor: '#8B5CF6' }]} />
-            <Text style={[s.pillLabel, { color: '#7C3AED' }]}>Leave</Text>
-          </View>
+          <Text style={s.overviewLabel}>Leave</Text>
         </View>
 
         <View style={s.overviewCard}>
           <Text style={s.overviewVal}>10 / 10</Text>
-          <View style={[s.overviewPill, { backgroundColor: '#FFFBEB' }]}>
-            <View style={[s.pillDot, { backgroundColor: '#F59E0B' }]} />
-            <Text style={[s.pillLabel, { color: '#D97706' }]}>Allowance</Text>
-          </View>
+          <Text style={s.overviewLabel}>Allowance</Text>
         </View>
       </View>
 
@@ -293,12 +281,12 @@ export default function HomeScreen({ navigation }: Props) {
           <View key={i} style={s.memberCard}>
             <View style={s.memberAvatarWrap}>
               <Text style={s.memberAvatarText}>{member.name.charAt(0)}</Text>
-              <View style={[s.memberDot, { backgroundColor: member.status === 'On Site' ? '#10B981' : '#0284C7' }]} />
+              <View style={s.memberDot} />
             </View>
             <Text style={s.memberName} numberOfLines={1}>{member.name}</Text>
             <Text style={s.memberRole}>{member.role}</Text>
-            <View style={[s.memberStatusBadge, { backgroundColor: member.status === 'On Site' ? '#ECFDF5' : '#F0F9FF' }]}>
-              <Text style={[s.memberStatusText, { color: member.status === 'On Site' ? '#059669' : '#0284C7' }]}>
+            <View style={s.memberStatusBadge}>
+              <Text style={s.memberStatusText}>
                 {member.status}
               </Text>
             </View>
@@ -349,7 +337,7 @@ export default function HomeScreen({ navigation }: Props) {
                 <View style={s.donutRingInner}>
                   <Text style={s.donutMainNum}>14</Text>
                   <View style={s.donutPresentPill}>
-                    <View style={[s.pillDot, { backgroundColor: '#10B981' }]} />
+                    <View style={s.pillDot} />
                     <Text style={s.donutPresentText}>Present this month</Text>
                   </View>
                 </View>
@@ -361,21 +349,18 @@ export default function HomeScreen({ navigation }: Props) {
           {/* 8-Grid Metric Status Cards */}
           <View style={s.eightGrid}>
             {[
-              { val: '00', label: 'Absent', color: '#EF4444', bg: '#FEF2F2' },
-              { val: '00', label: 'Leave', color: '#8B5CF6', bg: '#F5F3FF' },
-              { val: '10', label: 'Holidays', color: '#F59E0B', bg: '#FFFBEB' },
-              { val: '00', label: 'Half Day', color: '#EC4899', bg: '#FDF2F8' },
-              { val: '14', label: 'On Time', color: '#10B981', bg: '#ECFDF5' },
-              { val: '00', label: 'Late', color: '#F97316', bg: '#FFF7ED' },
-              { val: '00:00', label: 'Extra Hrs', color: '#06B6D4', bg: '#ECFEFF' },
-              { val: '00:00', label: 'Short Hrs', color: '#6B7280', bg: '#F9FAFB' },
+              { val: '00', label: 'Absent' },
+              { val: '00', label: 'Leave' },
+              { val: '10', label: 'Holidays' },
+              { val: '00', label: 'Half Day' },
+              { val: '14', label: 'On Time' },
+              { val: '00', label: 'Late' },
+              { val: '00:00', label: 'Extra Hrs' },
+              { val: '00:00', label: 'Short Hrs' },
             ].map((item, idx) => (
-              <View key={idx} style={[s.eightGridCard, { backgroundColor: item.bg }]}>
+              <View key={idx} style={s.eightGridCard}>
                 <Text style={s.eightGridVal}>{item.val}</Text>
-                <View style={s.eightGridPill}>
-                  <View style={[s.pillDot, { backgroundColor: item.color }]} />
-                  <Text style={[s.eightGridLabel, { color: item.color }]}>{item.label}</Text>
-                </View>
+                <Text style={s.eightGridLabel}>{item.label}</Text>
               </View>
             ))}
           </View>
@@ -444,7 +429,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
                 <View style={s.timelineCardIn}>
                   <View style={s.timelineCardLeft}>
-                    <IconArrowIn size={16} color="#16A34A" />
+                    <IconArrowIn size={16} color="#4F6B52" />
                     <Text style={s.timelineActionTitle}>Check In</Text>
                     <Text style={s.timelineTime}>10:14 AM</Text>
                   </View>
@@ -463,7 +448,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
                 <View style={s.timelineCardOut}>
                   <View style={s.timelineCardLeft}>
-                    <IconArrowOut size={16} color="#DC2626" />
+                    <IconArrowOut size={16} color="#A35448" />
                     <Text style={s.timelineActionTitle}>Check Out</Text>
                     <Text style={s.timelineTime}>06:31 PM</Text>
                   </View>
@@ -537,7 +522,7 @@ export default function HomeScreen({ navigation }: Props) {
         {/* 2-Column Summary Pill Cards */}
         <View style={s.profileInfoRow}>
           <View style={s.profileInfoBox}>
-            <IconSafety size={20} color="#2563EB" />
+            <IconSafety size={20} color="#2C3540" />
             <View>
               <Text style={s.profileInfoLabel}>Department</Text>
               <Text style={s.profileInfoVal}>Operations</Text>
@@ -545,7 +530,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
 
           <View style={s.profileInfoBox}>
-            <IconAttendance size={20} color="#EA580C" />
+            <IconAttendance size={20} color="#2C3540" />
             <View>
               <Text style={s.profileInfoLabel}>Employed Since</Text>
               <Text style={s.profileInfoVal}>Oct 1, 2025</Text>
@@ -562,7 +547,11 @@ export default function HomeScreen({ navigation }: Props) {
             style={[s.profileSubTabItem, profileSubTab === tab && s.profileSubTabItemActive]}
             onPress={() => setProfileSubTab(tab)}
             activeOpacity={0.8}>
-            <Text style={[s.profileSubTabText, profileSubTab === tab && s.profileSubTabTextActive]}>
+            <Text
+              style={[s.profileSubTabText, profileSubTab === tab && s.profileSubTabTextActive]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}>
               {tab === 'info' ? 'Information' : tab === 'emergency' ? 'Emergency' : tab === 'kyc' ? 'KYC' : 'Identity'}
             </Text>
           </TouchableOpacity>
@@ -683,7 +672,7 @@ export default function HomeScreen({ navigation }: Props) {
             style={s.bellBtn}
             onPress={() => navigation.navigate('History')}
             activeOpacity={0.75}>
-            <IconBell size={18} color="#0F172A" />
+            <IconBell size={18} color="#2C3540" />
             <View style={s.bellDot} />
           </TouchableOpacity>
 
@@ -692,7 +681,7 @@ export default function HomeScreen({ navigation }: Props) {
             style={s.adminPillBtn}
             onPress={handleAdminPress}
             activeOpacity={0.8}>
-            <IconLock size={12} color="#EA580C" />
+            <IconLock size={12} color="#1B4F72" />
             <Text style={s.adminPillText}>Admin</Text>
           </TouchableOpacity>
         </View>
@@ -712,40 +701,73 @@ export default function HomeScreen({ navigation }: Props) {
           style={[s.tabItem, activeTab === 'dashboard' && s.tabItemActive]}
           onPress={() => setActiveTab('dashboard')}
           activeOpacity={0.8}>
-          <IconDashboard size={20} color={activeTab === 'dashboard' ? '#2563EB' : '#94A3B8'} />
-          <Text style={[s.tabLabel, activeTab === 'dashboard' && s.tabLabelActive]}>Dashboard</Text>
+          <IconDashboard size={18} color={activeTab === 'dashboard' ? '#1B4F72' : '#8B939C'} />
+          <Text
+            style={[s.tabLabel, activeTab === 'dashboard' && s.tabLabelActive]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}>
+            Dashboard
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[s.tabItem, activeTab === 'attendance' && s.tabItemActive]}
           onPress={() => setActiveTab('attendance')}
           activeOpacity={0.8}>
-          <IconAttendance size={20} color={activeTab === 'attendance' ? '#2563EB' : '#94A3B8'} />
-          <Text style={[s.tabLabel, activeTab === 'attendance' && s.tabLabelActive]}>Attendance</Text>
+          <IconAttendance size={18} color={activeTab === 'attendance' ? '#1B4F72' : '#8B939C'} />
+          <Text
+            style={[s.tabLabel, activeTab === 'attendance' && s.tabLabelActive]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}>
+            Attendance
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[s.tabItem, activeTab === 'profile' && s.tabItemActive]}
           onPress={() => setActiveTab('profile')}
           activeOpacity={0.8}>
-          <IconProfile size={20} color={activeTab === 'profile' ? '#2563EB' : '#94A3B8'} />
-          <Text style={[s.tabLabel, activeTab === 'profile' && s.tabLabelActive]}>Profile</Text>
+          <IconProfile size={18} color={activeTab === 'profile' ? '#1B4F72' : '#8B939C'} />
+          <Text
+            style={[s.tabLabel, activeTab === 'profile' && s.tabLabelActive]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}>
+            Profile
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[s.tabItem, activeTab === 'more' && s.tabItemActive]}
           onPress={() => setActiveTab('more')}
           activeOpacity={0.8}>
-          <IconMore size={20} color={activeTab === 'more' ? '#2563EB' : '#94A3B8'} />
-          <Text style={[s.tabLabel, activeTab === 'more' && s.tabLabelActive]}>More</Text>
+          <IconMore size={18} color={activeTab === 'more' ? '#1B4F72' : '#8B939C'} />
+          <Text
+            style={[s.tabLabel, activeTab === 'more' && s.tabLabelActive]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}>
+            More
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
+const INK = '#2C3540';
+const MUTED = '#5B6570';
+const FAINT = '#8B939C';
+const PAPER = '#F4F6F8';
+const CARD = '#FFFFFF';
+const LINE = '#E6E8EC';
+const CLAY = '#1B4F72';
+const MOSS = '#2F6B4F';
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
 
   /* App Top Header */
   appHeader: {
@@ -755,47 +777,47 @@ const s = StyleSheet.create({
     paddingTop: spacing.xxxl + spacing.xs,
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.lg,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CARD,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: LINE,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  headerLogoImg: { width: 44, height: 44, borderRadius: 22 },
-  headerGreeting: { fontFamily: fonts.medium, fontSize: 12, color: '#64748B' },
-  headerUserName: { fontFamily: fonts.bold, fontSize: 18, color: '#0F172A', letterSpacing: -0.3, marginTop: -2 },
+  headerLogoImg: { width: 40, height: 40, borderRadius: 8 },
+  headerGreeting: { fontFamily: fonts.regular, fontSize: 12, color: MUTED },
+  headerUserName: { fontFamily: fonts.semiBold, fontSize: 17, color: INK, marginTop: -1 },
 
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   bellBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#F8FAFC',
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: PAPER,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: LINE,
   },
   bellDot: {
     position: 'absolute',
     top: 8,
-    right: 9,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#EA580C',
+    right: 8,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: CLAY,
   },
   adminPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: PAPER,
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: LINE,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: borderRadius.full,
+    borderRadius: 8,
   },
-  adminPillText: { fontFamily: fonts.semiBold, fontSize: 12, color: '#EA580C' },
+  adminPillText: { fontFamily: fonts.medium, fontSize: 12, color: INK },
 
   /* Body */
   mainBody: { flex: 1 },
@@ -810,23 +832,25 @@ const s = StyleSheet.create({
   },
   quickActionItem: { alignItems: 'center', flex: 1 },
   quickActionIconWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 52,
+    height: 52,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    ...shadows.sm,
+    backgroundColor: CARD,
+    borderColor: LINE,
   },
-  quickActionLabel: { fontFamily: fonts.medium, fontSize: 11.5, color: '#475569', marginTop: 6 },
+  quickActionLabel: { fontFamily: fonts.medium, fontSize: 11, color: MUTED, marginTop: 6 },
 
   /* 2. Hero Live Attendance Card */
   heroCard: {
-    backgroundColor: '#1E40AF',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.lg,
     marginTop: spacing.md,
-    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: LINE,
   },
   heroTopRow: {
     flexDirection: 'row',
@@ -836,49 +860,49 @@ const s = StyleSheet.create({
   heroTimeSection: { flex: 1 },
   ringAndDate: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   progressRing: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 3,
-    borderColor: '#60A5FA',
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: LINE,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: PAPER,
   },
-  progressRingText: { fontFamily: fonts.bold, color: '#FFFFFF', fontSize: 10 },
-  heroDateText: { fontFamily: fonts.semiBold, color: 'rgba(255, 255, 255, 0.85)', fontSize: 12, letterSpacing: 0.3 },
+  progressRingText: { fontFamily: fonts.semiBold, color: INK, fontSize: 9 },
+  heroDateText: { fontFamily: fonts.medium, color: MUTED, fontSize: 12 },
   heroClockText: {
-    fontFamily: fonts.bold,
-    color: '#FFFFFF',
-    fontSize: 30,
-    marginTop: 2,
-    letterSpacing: 0.5,
+    fontFamily: fonts.semiBold,
+    color: INK,
+    fontSize: 28,
+    marginTop: 4,
+    letterSpacing: 0.4,
   },
 
   heroAvatarWrap: { position: 'relative' },
   heroAvatarImg: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: LINE,
   },
   heroAvatarOnlineDot: {
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: MOSS,
+    borderWidth: 1.5,
+    borderColor: CARD,
   },
 
   heroBottomRibbon: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(30, 58, 138, 0.65)',
-    borderRadius: borderRadius.lg,
+    backgroundColor: PAPER,
+    borderRadius: 10,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
@@ -886,23 +910,22 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
   },
   ribbonCol: { alignItems: 'center', flex: 1 },
-  ribbonLabel: { fontFamily: fonts.regular, color: 'rgba(255, 255, 255, 0.75)', fontSize: 11 },
+  ribbonLabel: { fontFamily: fonts.regular, color: MUTED, fontSize: 11 },
   ribbonValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  ribbonValue: { fontFamily: fonts.semiBold, color: '#FFFFFF', fontSize: 12.5 },
-  ribbonDivider: { width: 1, height: 24, backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+  ribbonValue: { fontFamily: fonts.semiBold, color: INK, fontSize: 12.5 },
+  ribbonDivider: { width: 1, height: 24, backgroundColor: LINE },
 
   heroPunchBtn: {
-    backgroundColor: '#EA580C',
-    borderRadius: borderRadius.md,
+    backgroundColor: CLAY,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,
     marginTop: spacing.md,
-    ...shadows.md,
   },
-  heroPunchBtnText: { fontFamily: fonts.bold, color: '#FFFFFF', fontSize: 14, letterSpacing: 0.3 },
+  heroPunchBtnText: { fontFamily: fonts.semiBold, color: CARD, fontSize: 14 },
 
   /* 3. Overview 2x2 Grid */
   overviewHeader: {
@@ -913,8 +936,8 @@ const s = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   overviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  overviewTitle: { fontFamily: fonts.bold, fontSize: 16, color: '#0F172A' },
-  overviewMonth: { fontFamily: fonts.semiBold, fontSize: 13, color: '#2563EB' },
+  overviewTitle: { fontFamily: fonts.semiBold, fontSize: 16, color: INK },
+  overviewMonth: { fontFamily: fonts.medium, fontSize: 13, color: MUTED },
 
   overviewGrid: {
     flexDirection: 'row',
@@ -923,26 +946,26 @@ const s = StyleSheet.create({
   },
   overviewCard: {
     width: (width - 44) / 2,
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.sm,
+    borderColor: LINE,
   },
-  overviewVal: { fontFamily: fonts.bold, fontSize: 24, color: '#0F172A' },
+  overviewVal: { fontFamily: fonts.semiBold, fontSize: 24, color: INK },
+  overviewLabel: { fontFamily: fonts.regular, fontSize: 12, color: MUTED, marginTop: 4 },
   overviewPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: spacing.sm + 2,
     paddingVertical: 4,
-    borderRadius: borderRadius.full,
+    borderRadius: 8,
     alignSelf: 'flex-start',
     marginTop: spacing.xs + 2,
   },
-  pillDot: { width: 6, height: 6, borderRadius: 3 },
-  pillLabel: { fontFamily: fonts.semiBold, fontSize: 11 },
+  pillDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: MOSS },
+  pillLabel: { fontFamily: fonts.medium, fontSize: 11, color: MUTED },
 
   /* 4. Team Activity Section */
   teamSectionHeader: {
@@ -952,101 +975,101 @@ const s = StyleSheet.create({
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
-  teamSectionTitle: { fontFamily: fonts.bold, fontSize: 15, color: '#0F172A' },
-  teamSectionSub: { fontFamily: fonts.semiBold, fontSize: 12, color: '#64748B' },
+  teamSectionTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: INK },
+  teamSectionSub: { fontFamily: fonts.medium, fontSize: 12, color: MUTED },
   teamScroll: { marginBottom: spacing.sm },
   memberCard: {
     width: 130,
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.md,
     alignItems: 'center',
     marginRight: spacing.sm,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.sm,
+    borderColor: LINE,
   },
   memberAvatarWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EFF6FF',
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: PAPER,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     marginBottom: 6,
   },
-  memberAvatarText: { fontFamily: fonts.bold, fontSize: 18, color: '#2563EB' },
+  memberAvatarText: { fontFamily: fonts.semiBold, fontSize: 17, color: INK },
   memberDot: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    borderColor: CARD,
+    backgroundColor: MOSS,
   },
-  memberName: { fontFamily: fonts.semiBold, fontSize: 12, color: '#0F172A', textAlign: 'center' },
-  memberRole: { fontFamily: fonts.regular, fontSize: 10.5, color: '#64748B', marginTop: 1 },
+  memberName: { fontFamily: fonts.medium, fontSize: 12, color: INK, textAlign: 'center' },
+  memberRole: { fontFamily: fonts.regular, fontSize: 10.5, color: MUTED, marginTop: 1 },
   memberStatusBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: borderRadius.full,
+    borderRadius: 6,
     marginTop: 6,
+    backgroundColor: PAPER,
   },
-  memberStatusText: { fontFamily: fonts.semiBold, fontSize: 9.5 },
+  memberStatusText: { fontFamily: fonts.medium, fontSize: 9.5, color: MUTED },
 
   /* ── Tab 2: Attendance Styles ─────────────────────────────────── */
   subTabBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.md,
-    padding: 4,
+    backgroundColor: CARD,
+    borderRadius: 10,
+    padding: 3,
     marginVertical: spacing.xs,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: LINE,
   },
-  subTabItem: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: borderRadius.sm },
-  subTabItemActive: { backgroundColor: '#2563EB' },
-  subTabText: { fontFamily: fonts.semiBold, fontSize: 13, color: '#64748B' },
-  subTabTextActive: { color: '#FFFFFF' },
+  subTabItem: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: 8 },
+  subTabItemActive: { backgroundColor: PAPER },
+  subTabText: { fontFamily: fonts.medium, fontSize: 13, color: MUTED },
+  subTabTextActive: { color: INK, fontFamily: fonts.semiBold },
   subTabScroll: { flex: 1, marginTop: spacing.sm },
 
   donutCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.sm,
+    borderColor: LINE,
   },
   donutRingWrap: { marginVertical: spacing.sm },
   donutRingOuter: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 16,
-    borderColor: '#22C55E',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 10,
+    borderColor: LINE,
     alignItems: 'center',
     justifyContent: 'center',
-    borderLeftColor: '#BFDBFE',
+    borderTopColor: CLAY,
   },
   donutRingInner: { alignItems: 'center' },
-  donutMainNum: { fontFamily: fonts.bold, fontSize: 36, color: '#0F172A' },
+  donutMainNum: { fontFamily: fonts.semiBold, fontSize: 34, color: INK },
   donutPresentPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: PAPER,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: borderRadius.full,
+    borderRadius: 8,
     marginTop: 2,
   },
-  donutPresentText: { fontFamily: fonts.semiBold, fontSize: 11, color: '#059669' },
-  donutPrevText: { fontFamily: fonts.regular, fontSize: 12, color: '#94A3B8', marginTop: spacing.md },
+  donutPresentText: { fontFamily: fonts.medium, fontSize: 11, color: MUTED },
+  donutPrevText: { fontFamily: fonts.regular, fontSize: 12, color: FAINT, marginTop: spacing.md },
 
   eightGrid: {
     flexDirection: 'row',
@@ -1055,65 +1078,65 @@ const s = StyleSheet.create({
     marginTop: spacing.md,
   },
   eightGridCard: {
-    width: (width - 44) / 4,
-    borderRadius: borderRadius.md,
+    width: (width - 52) / 4,
+    backgroundColor: CARD,
+    borderRadius: 10,
     paddingVertical: spacing.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: LINE,
   },
-  eightGridVal: { fontFamily: fonts.bold, fontSize: 16, color: '#0F172A' },
+  eightGridVal: { fontFamily: fonts.semiBold, fontSize: 16, color: INK },
   eightGridPill: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
-  eightGridLabel: { fontFamily: fonts.semiBold, fontSize: 10 },
+  eightGridLabel: { fontFamily: fonts.regular, fontSize: 10, color: MUTED, marginTop: 4 },
 
   /* Daily Stats Timeline */
   dateRibbon: { marginBottom: spacing.md },
   datePill: {
     width: 44,
     height: 64,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    backgroundColor: CARD,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.xs + 2,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: LINE,
   },
-  datePillActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  datePillDay: { fontFamily: fonts.medium, fontSize: 11, color: '#64748B' },
-  datePillDayActive: { color: '#FFFFFF' },
-  datePillDate: { fontFamily: fonts.bold, fontSize: 15, color: '#0F172A', marginTop: 2 },
-  datePillDateActive: { color: '#FFFFFF' },
+  datePillActive: { backgroundColor: PAPER, borderColor: CLAY },
+  datePillDay: { fontFamily: fonts.medium, fontSize: 11, color: MUTED },
+  datePillDayActive: { color: CLAY },
+  datePillDate: { fontFamily: fonts.semiBold, fontSize: 15, color: INK, marginTop: 2 },
+  datePillDateActive: { color: CLAY },
 
   daySummaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.sm,
+    borderColor: LINE,
   },
-  daySummaryDate: { fontFamily: fonts.bold, fontSize: 13, color: '#2563EB' },
+  daySummaryDate: { fontFamily: fonts.semiBold, fontSize: 13, color: CLAY },
   dayWorkingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginVertical: spacing.md,
   },
-  workingLabel: { fontFamily: fonts.regular, fontSize: 11.5, color: '#64748B' },
-  workingHours: { fontFamily: fonts.bold, fontSize: 26, color: '#0F172A', marginTop: 2 },
-  shortHoursText: { fontFamily: fonts.semiBold, fontSize: 13, color: '#94A3B8', marginTop: 2 },
+  workingLabel: { fontFamily: fonts.regular, fontSize: 11.5, color: MUTED },
+  workingHours: { fontFamily: fonts.semiBold, fontSize: 26, color: INK, marginTop: 2 },
+  shortHoursText: { fontFamily: fonts.medium, fontSize: 13, color: FAINT, marginTop: 2 },
 
   shiftPillRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: PAPER,
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 10,
   },
-  shiftPillAccent: { width: 4, height: 16, backgroundColor: '#2563EB', borderRadius: 2 },
-  shiftPillText: { fontFamily: fonts.medium, fontSize: 12, color: '#475569' },
+  shiftPillAccent: { width: 3, height: 16, backgroundColor: CLAY, borderRadius: 2 },
+  shiftPillText: { fontFamily: fonts.medium, fontSize: 12, color: MUTED },
 
   timelineContainer: { marginTop: spacing.lg },
   timelineStep: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
@@ -1122,69 +1145,72 @@ const s = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#2563EB',
+    backgroundColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepCircleCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
-  timelineLine: { width: 2, flex: 1, backgroundColor: '#CBD5E1', marginVertical: 4 },
+  stepCircleCheck: { color: CARD, fontSize: 12, fontWeight: '700' },
+  timelineLine: { width: 1, flex: 1, backgroundColor: LINE, marginVertical: 4 },
 
   timelineCardIn: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: PAPER,
     padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: LINE,
   },
   timelineCardOut: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FEF2F2',
+    backgroundColor: PAPER,
     padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: LINE,
   },
   timelineCardLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  timelineActionTitle: { fontFamily: fonts.semiBold, fontSize: 13.5, color: '#0F172A' },
-  timelineTime: { fontFamily: fonts.medium, fontSize: 13, color: '#475569' },
+  timelineActionTitle: { fontFamily: fonts.semiBold, fontSize: 13.5, color: INK },
+  timelineTime: { fontFamily: fonts.medium, fontSize: 13, color: MUTED },
   onTimeBadge: {
-    backgroundColor: '#22C55E',
+    backgroundColor: PAPER,
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
-    borderRadius: borderRadius.full,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: LINE,
   },
-  onTimeBadgeText: { fontFamily: fonts.bold, color: '#FFFFFF', fontSize: 11 },
+  onTimeBadgeText: { fontFamily: fonts.medium, color: MOSS, fontSize: 11 },
   goodJobBadge: {
-    backgroundColor: '#22C55E',
+    backgroundColor: PAPER,
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
-    borderRadius: borderRadius.full,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: LINE,
   },
-  goodJobBadgeText: { fontFamily: fonts.bold, color: '#FFFFFF', fontSize: 11 },
+  goodJobBadgeText: { fontFamily: fonts.medium, color: MOSS, fontSize: 11 },
 
   /* Request Card */
   requestCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.sm,
+    borderColor: LINE,
   },
   requestTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  requestTitle: { fontFamily: fonts.bold, fontSize: 15, color: '#2563EB' },
-  requestDate: { fontFamily: fonts.regular, fontSize: 12, color: '#64748B' },
-  requestDesc: { fontFamily: fonts.semiBold, fontSize: 13.5, color: '#0F172A', marginVertical: spacing.sm },
+  requestTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: INK },
+  requestDate: { fontFamily: fonts.regular, fontSize: 12, color: MUTED },
+  requestDesc: { fontFamily: fonts.medium, fontSize: 13.5, color: INK, marginVertical: spacing.sm },
   requestMetaRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: spacing.xs },
-  requestApplied: { fontFamily: fonts.regular, fontSize: 11.5, color: '#94A3B8' },
-  requestTx: { fontFamily: fonts.semiBold, fontSize: 11.5, color: '#2563EB' },
+  requestApplied: { fontFamily: fonts.regular, fontSize: 11.5, color: FAINT },
+  requestTx: { fontFamily: fonts.medium, fontSize: 11.5, color: CLAY },
   requestBottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1192,22 +1218,22 @@ const s = StyleSheet.create({
     marginTop: spacing.md,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: LINE,
   },
-  adminNoteText: { fontFamily: fonts.medium, fontSize: 12.5, color: '#0F172A' },
+  adminNoteText: { fontFamily: fonts.medium, fontSize: 12.5, color: INK },
   approvedBadge: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: PAPER,
     borderWidth: 1,
-    borderColor: '#16A34A',
+    borderColor: LINE,
     paddingHorizontal: spacing.md,
     paddingVertical: 3,
-    borderRadius: borderRadius.sm,
+    borderRadius: 6,
   },
-  approvedBadgeText: { fontFamily: fonts.bold, color: '#16A34A', fontSize: 11.5 },
+  approvedBadgeText: { fontFamily: fonts.medium, color: MOSS, fontSize: 11.5 },
   newRequestBtn: {
-    backgroundColor: '#2563EB',
+    backgroundColor: CLAY,
     paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: spacing.lg,
   },
@@ -1215,40 +1241,39 @@ const s = StyleSheet.create({
 
   /* ── Tab 3: Profile Styles ───────────────────────────────────── */
   profileHeaderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.sm,
+    borderColor: LINE,
   },
   profileAvatarWrap: { position: 'relative', marginBottom: spacing.sm },
-  profileAvatarImg: { width: 84, height: 84, borderRadius: 42 },
+  profileAvatarImg: { width: 84, height: 84, borderRadius: 12 },
   profileVerifiedBadge: {
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#22C55E',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: MOSS,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
-  profileVerifiedCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
-  profileName: { fontFamily: fonts.bold, fontSize: 20, color: '#0F172A' },
-  profileRole: { fontFamily: fonts.regular, fontSize: 13, color: '#64748B', marginTop: 2 },
+  profileVerifiedCheck: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  profileName: { fontFamily: fonts.semiBold, fontSize: 20, color: INK },
+  profileRole: { fontFamily: fonts.regular, fontSize: 13, color: MUTED, marginTop: 2 },
   profileIdBadge: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: PAPER,
     paddingHorizontal: spacing.md,
     paddingVertical: 3,
-    borderRadius: borderRadius.sm,
+    borderRadius: 6,
     marginTop: 6,
   },
-  profileIdText: { fontFamily: fonts.semiBold, fontSize: 11.5, color: '#2563EB' },
+  profileIdText: { fontFamily: fonts.medium, fontSize: 11.5, color: CLAY },
 
   profileInfoRow: {
     flexDirection: 'row',
@@ -1261,93 +1286,91 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: PAPER,
     padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: LINE,
   },
-  profileInfoLabel: { fontFamily: fonts.regular, fontSize: 10.5, color: '#64748B' },
-  profileInfoVal: { fontFamily: fonts.semiBold, fontSize: 12.5, color: '#0F172A', marginTop: 1 },
+  profileInfoLabel: { fontFamily: fonts.regular, fontSize: 10.5, color: MUTED },
+  profileInfoVal: { fontFamily: fonts.semiBold, fontSize: 12.5, color: INK, marginTop: 1 },
 
   profileSubTabBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CARD,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: LINE,
     marginTop: spacing.lg,
   },
   profileSubTabItem: { flex: 1, paddingVertical: spacing.md, alignItems: 'center' },
-  profileSubTabItemActive: { borderBottomWidth: 2.5, borderBottomColor: '#2563EB' },
-  profileSubTabText: { fontFamily: fonts.medium, fontSize: 12, color: '#64748B' },
-  profileSubTabTextActive: { fontFamily: fonts.bold, color: '#2563EB' },
+  profileSubTabItemActive: { borderBottomWidth: 2, borderBottomColor: CLAY },
+  profileSubTabText: { fontFamily: fonts.medium, fontSize: 12, color: MUTED },
+  profileSubTabTextActive: { fontFamily: fonts.semiBold, color: CLAY },
 
   profileFormSection: { marginTop: spacing.lg },
   profileFormTitle: {
-    fontFamily: fonts.bold,
+    fontFamily: fonts.semiBold,
     fontSize: 14,
-    color: '#0F172A',
+    color: INK,
     marginBottom: spacing.md,
   },
   fieldWrapper: { marginBottom: spacing.sm },
   dualFieldRow: { flexDirection: 'row', gap: spacing.sm },
-  fieldLabel: { fontFamily: fonts.medium, fontSize: 11, color: '#94A3B8', marginBottom: 4 },
+  fieldLabel: { fontFamily: fonts.medium, fontSize: 11, color: FAINT, marginBottom: 4 },
   fieldCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: CARD,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: borderRadius.md,
+    borderColor: LINE,
+    borderRadius: 10,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 3,
   },
-  fieldValue: { fontFamily: fonts.semiBold, fontSize: 13.5, color: '#0F172A' },
+  fieldValue: { fontFamily: fonts.medium, fontSize: 13.5, color: INK },
 
   /* ── Tab 4: More Styles ──────────────────────────────────────── */
   adminBanner: {
-    backgroundColor: '#FFF7ED',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: '#FED7AA',
-    ...shadows.sm,
+    borderColor: LINE,
   },
   adminBannerIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EA580C',
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: CLAY,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  adminBannerTitle: { fontFamily: fonts.bold, fontSize: 15, color: '#C2410C' },
-  adminBannerSub: { fontFamily: fonts.regular, fontSize: 11.5, color: '#9A3412', marginTop: 2 },
+  adminBannerTitle: { fontFamily: fonts.semiBold, fontSize: 15, color: INK },
+  adminBannerSub: { fontFamily: fonts.regular, fontSize: 11.5, color: MUTED, marginTop: 2 },
   adminBannerArrow: {
     width: 28,
     height: 28,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    backgroundColor: PAPER,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  adminBannerArrowText: { color: '#EA580C', fontSize: 14, fontWeight: '900' },
+  adminBannerArrowText: { color: CLAY, fontSize: 14, fontWeight: '700' },
 
   moreSectionTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 13.5,
-    color: '#64748B',
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: MUTED,
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
   moreMenuCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
+    backgroundColor: CARD,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: LINE,
     overflow: 'hidden',
-    ...shadows.sm,
   },
   moreMenuItem: {
     flexDirection: 'row',
@@ -1355,15 +1378,15 @@ const s = StyleSheet.create({
     padding: spacing.lg,
   },
   moreMenuDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#2563EB',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: CLAY,
     marginRight: spacing.md,
   },
-  moreMenuBorder: { borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  moreMenuLabel: { fontFamily: fonts.semiBold, fontSize: 14, color: '#0F172A', flex: 1 },
-  moreMenuArrow: { fontSize: 20, color: '#CBD5E1' },
+  moreMenuBorder: { borderTopWidth: 1, borderTopColor: LINE },
+  moreMenuLabel: { fontFamily: fonts.medium, fontSize: 14, color: INK, flex: 1 },
+  moreMenuArrow: { fontSize: 20, color: FAINT },
 
   /* ── Bottom Navigation Tab Bar ───────────────────────────────── */
   bottomTabBar: {
@@ -1371,23 +1394,32 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 72,
+    height: 76,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingBottom: 8,
-    ...shadows.lg,
+    borderTopColor: LINE,
+    paddingBottom: 10,
+    paddingHorizontal: 4,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
+    paddingHorizontal: 2,
+    overflow: 'visible',
   },
   tabItemActive: {},
-  tabLabel: { fontFamily: fonts.medium, fontSize: 11, color: '#94A3B8', marginTop: 3 },
-  tabLabelActive: { fontFamily: fonts.bold, color: '#2563EB' },
+  tabLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: FAINT,
+    marginTop: 4,
+    width: '100%',
+    textAlign: 'center',
+  },
+  tabLabelActive: { fontFamily: fonts.semiBold, color: CLAY },
 });
