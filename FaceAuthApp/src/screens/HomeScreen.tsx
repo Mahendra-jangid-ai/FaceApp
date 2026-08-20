@@ -7,16 +7,11 @@ import {
   StatusBar,
   ScrollView,
   Image,
-  FlatList,
-  TextInput,
   Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Feather from 'react-native-vector-icons/Feather';
-import { colors, spacing, borderRadius, typography, shadows, fonts, MONO } from '../theme';
+import { colors, spacing, borderRadius, shadows, fonts, MONO } from '../theme';
 import {
   getEnrolledUsers,
   getAuthLogs,
@@ -24,6 +19,21 @@ import {
 } from '../services/database';
 import { isOnline } from '../services/syncService';
 import { getSession } from '../auth/sessionStore';
+import {
+  IconAttendance,
+  IconSafety,
+  IconLeave,
+  IconHolidays,
+  IconDashboard,
+  IconProfile,
+  IconMore,
+  IconFaceScan,
+  IconBell,
+  IconLock,
+  IconArrowIn,
+  IconArrowOut,
+  IconClock,
+} from '../components/ModernIcons';
 import type { RootStackParamList, AttendanceRecord, AuthLog, EnrolledUser } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -121,7 +131,7 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Authenticate')}
           activeOpacity={0.75}>
           <View style={[s.quickActionIconWrap, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-            <MaterialCommunityIcons name="face-recognition" size={24} color="#2563EB" />
+            <IconAttendance size={22} color="#2563EB" />
           </View>
           <Text style={s.quickActionLabel}>Attendance</Text>
         </TouchableOpacity>
@@ -131,7 +141,7 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('PPECheck')}
           activeOpacity={0.75}>
           <View style={[s.quickActionIconWrap, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
-            <MaterialCommunityIcons name="hard-hat" size={24} color="#16A34A" />
+            <IconSafety size={22} color="#16A34A" />
           </View>
           <Text style={s.quickActionLabel}>PPE Safety</Text>
         </TouchableOpacity>
@@ -141,7 +151,7 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => setActiveTab('attendance')}
           activeOpacity={0.75}>
           <View style={[s.quickActionIconWrap, { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' }]}>
-            <MaterialCommunityIcons name="airplane-takeoff" size={24} color="#EA580C" />
+            <IconLeave size={22} color="#EA580C" />
           </View>
           <Text style={s.quickActionLabel}>Leave</Text>
         </TouchableOpacity>
@@ -151,7 +161,7 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Calendar')}
           activeOpacity={0.75}>
           <View style={[s.quickActionIconWrap, { backgroundColor: '#FAF5FF', borderColor: '#E9D5FF' }]}>
-            <MaterialCommunityIcons name="weather-sunset" size={24} color="#9333EA" />
+            <IconHolidays size={22} color="#9333EA" />
           </View>
           <Text style={s.quickActionLabel}>Holidays</Text>
         </TouchableOpacity>
@@ -187,7 +197,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.ribbonCol}>
             <Text style={s.ribbonLabel}>Check In</Text>
             <View style={s.ribbonValueRow}>
-              <Feather name="arrow-down-left" size={14} color="#4ADE80" />
+              <IconArrowIn size={14} color="#4ADE80" />
               <Text style={s.ribbonValue}>10:14 AM</Text>
             </View>
           </View>
@@ -197,7 +207,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.ribbonCol}>
             <Text style={s.ribbonLabel}>Check Out</Text>
             <View style={s.ribbonValueRow}>
-              <Feather name="arrow-up-right" size={14} color="#F87171" />
+              <IconArrowOut size={14} color="#F87171" />
               <Text style={s.ribbonValue}>06:31 PM</Text>
             </View>
           </View>
@@ -207,7 +217,7 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.ribbonCol}>
             <Text style={s.ribbonLabel}>Short Hours</Text>
             <View style={s.ribbonValueRow}>
-              <Feather name="clock" size={12} color="#94A3B8" />
+              <IconClock size={12} color="#94A3B8" />
               <Text style={s.ribbonValue}>00:00</Text>
             </View>
           </View>
@@ -218,7 +228,7 @@ export default function HomeScreen({ navigation }: Props) {
           style={s.heroPunchBtn}
           onPress={() => navigation.navigate('Authenticate')}
           activeOpacity={0.88}>
-          <MaterialCommunityIcons name="face-recognition" size={20} color="#FFFFFF" />
+          <IconFaceScan size={18} color="#FFFFFF" />
           <Text style={s.heroPunchBtnText}>Scan Face to Punch In / Out</Text>
         </TouchableOpacity>
       </View>
@@ -226,7 +236,7 @@ export default function HomeScreen({ navigation }: Props) {
       {/* 3. Monthly Overview Section */}
       <View style={s.overviewHeader}>
         <View style={s.overviewTitleRow}>
-          <Feather name="trending-up" size={16} color="#0F172A" />
+          <IconAttendance size={18} color="#0F172A" />
           <Text style={s.overviewTitle}>Overview</Text>
         </View>
         <Text style={s.overviewMonth}>August 2026</Text>
@@ -269,10 +279,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* 4. On-Site Team & Activity Section */}
       <View style={s.teamSectionHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Feather name="users" size={15} color="#0F172A" />
-          <Text style={s.teamSectionTitle}>Site Workers Active</Text>
-        </View>
+        <Text style={s.teamSectionTitle}>Site Workers Active</Text>
         <Text style={s.teamSectionSub}>{onSiteCount} Checked In</Text>
       </View>
 
@@ -431,13 +438,13 @@ export default function HomeScreen({ navigation }: Props) {
               <View style={s.timelineStep}>
                 <View style={s.timelineLeft}>
                   <View style={s.stepCircleActive}>
-                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                    <Text style={s.stepCircleCheck}>✓</Text>
                   </View>
                   <View style={s.timelineLine} />
                 </View>
                 <View style={s.timelineCardIn}>
                   <View style={s.timelineCardLeft}>
-                    <Feather name="arrow-down-left" size={16} color="#16A34A" />
+                    <IconArrowIn size={16} color="#16A34A" />
                     <Text style={s.timelineActionTitle}>Check In</Text>
                     <Text style={s.timelineTime}>10:14 AM</Text>
                   </View>
@@ -451,12 +458,12 @@ export default function HomeScreen({ navigation }: Props) {
               <View style={s.timelineStep}>
                 <View style={s.timelineLeft}>
                   <View style={s.stepCircleActive}>
-                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                    <Text style={s.stepCircleCheck}>✓</Text>
                   </View>
                 </View>
                 <View style={s.timelineCardOut}>
                   <View style={s.timelineCardLeft}>
-                    <Feather name="arrow-up-right" size={16} color="#DC2626" />
+                    <IconArrowOut size={16} color="#DC2626" />
                     <Text style={s.timelineActionTitle}>Check Out</Text>
                     <Text style={s.timelineTime}>06:31 PM</Text>
                   </View>
@@ -517,7 +524,7 @@ export default function HomeScreen({ navigation }: Props) {
             resizeMode="cover"
           />
           <View style={s.profileVerifiedBadge}>
-            <Ionicons name="checkmark" size={13} color="#FFFFFF" />
+            <Text style={s.profileVerifiedCheck}>✓</Text>
           </View>
         </View>
 
@@ -530,7 +537,7 @@ export default function HomeScreen({ navigation }: Props) {
         {/* 2-Column Summary Pill Cards */}
         <View style={s.profileInfoRow}>
           <View style={s.profileInfoBox}>
-            <MaterialCommunityIcons name="office-building" size={20} color="#2563EB" />
+            <IconSafety size={20} color="#2563EB" />
             <View>
               <Text style={s.profileInfoLabel}>Department</Text>
               <Text style={s.profileInfoVal}>Operations</Text>
@@ -538,7 +545,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
 
           <View style={s.profileInfoBox}>
-            <MaterialCommunityIcons name="calendar-check" size={20} color="#EA580C" />
+            <IconAttendance size={20} color="#EA580C" />
             <View>
               <Text style={s.profileInfoLabel}>Employed Since</Text>
               <Text style={s.profileInfoVal}>Oct 1, 2025</Text>
@@ -614,14 +621,14 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Admin Portal Header Banner */}
       <TouchableOpacity style={s.adminBanner} onPress={handleAdminPress} activeOpacity={0.88}>
         <View style={s.adminBannerIconWrap}>
-          <MaterialCommunityIcons name="shield-lock" size={24} color="#FFFFFF" />
+          <IconLock size={22} color="#FFFFFF" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.adminBannerTitle}>Admin & Supervisor Portal</Text>
           <Text style={s.adminBannerSub}>Enrol workers, site analytics, geofencing & server sync</Text>
         </View>
         <View style={s.adminBannerArrow}>
-          <Feather name="arrow-right" size={14} color="#EA580C" />
+          <Text style={s.adminBannerArrowText}>→</Text>
         </View>
       </TouchableOpacity>
 
@@ -630,20 +637,20 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Menu Options */}
       <View style={s.moreMenuCard}>
         {[
-          { icon: 'cog-outline', label: 'System Settings & Data Sync', screen: 'Settings' },
-          { icon: 'account-group-outline', label: 'Worker Directory', screen: 'WorkerList' },
-          { icon: 'chart-box-outline', label: 'Analytics Dashboard', screen: 'Dashboard' },
-          { icon: 'calendar-month-outline', label: 'Work Calendar', screen: 'Calendar' },
-          { icon: 'history', label: 'Biometric Audit Logs', screen: 'History' },
+          { label: 'System Settings & Data Sync', screen: 'Settings' },
+          { label: 'Worker Directory', screen: 'WorkerList' },
+          { label: 'Analytics Dashboard', screen: 'Dashboard' },
+          { label: 'Work Calendar', screen: 'Calendar' },
+          { label: 'Biometric Audit Logs', screen: 'History' },
         ].map((item, idx) => (
           <TouchableOpacity
             key={idx}
             style={[s.moreMenuItem, idx > 0 && s.moreMenuBorder]}
             onPress={() => navigation.navigate(item.screen as any)}
             activeOpacity={0.75}>
-            <MaterialCommunityIcons name={item.icon} size={22} color="#2563EB" style={{ marginRight: spacing.md }} />
+            <View style={s.moreMenuDot} />
             <Text style={s.moreMenuLabel}>{item.label}</Text>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Text style={s.moreMenuArrow}>›</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -676,7 +683,7 @@ export default function HomeScreen({ navigation }: Props) {
             style={s.bellBtn}
             onPress={() => navigation.navigate('History')}
             activeOpacity={0.75}>
-            <Feather name="bell" size={18} color="#0F172A" />
+            <IconBell size={18} color="#0F172A" />
             <View style={s.bellDot} />
           </TouchableOpacity>
 
@@ -685,7 +692,7 @@ export default function HomeScreen({ navigation }: Props) {
             style={s.adminPillBtn}
             onPress={handleAdminPress}
             activeOpacity={0.8}>
-            <MaterialCommunityIcons name="shield-lock-outline" size={14} color="#EA580C" />
+            <IconLock size={12} color="#EA580C" />
             <Text style={s.adminPillText}>Admin</Text>
           </TouchableOpacity>
         </View>
@@ -705,11 +712,7 @@ export default function HomeScreen({ navigation }: Props) {
           style={[s.tabItem, activeTab === 'dashboard' && s.tabItemActive]}
           onPress={() => setActiveTab('dashboard')}
           activeOpacity={0.8}>
-          <MaterialCommunityIcons
-            name={activeTab === 'dashboard' ? 'home-variant' : 'home-variant-outline'}
-            size={24}
-            color={activeTab === 'dashboard' ? '#2563EB' : '#94A3B8'}
-          />
+          <IconDashboard size={20} color={activeTab === 'dashboard' ? '#2563EB' : '#94A3B8'} />
           <Text style={[s.tabLabel, activeTab === 'dashboard' && s.tabLabelActive]}>Dashboard</Text>
         </TouchableOpacity>
 
@@ -717,11 +720,7 @@ export default function HomeScreen({ navigation }: Props) {
           style={[s.tabItem, activeTab === 'attendance' && s.tabItemActive]}
           onPress={() => setActiveTab('attendance')}
           activeOpacity={0.8}>
-          <MaterialCommunityIcons
-            name={activeTab === 'attendance' ? 'chart-box' : 'chart-box-outline'}
-            size={24}
-            color={activeTab === 'attendance' ? '#2563EB' : '#94A3B8'}
-          />
+          <IconAttendance size={20} color={activeTab === 'attendance' ? '#2563EB' : '#94A3B8'} />
           <Text style={[s.tabLabel, activeTab === 'attendance' && s.tabLabelActive]}>Attendance</Text>
         </TouchableOpacity>
 
@@ -729,11 +728,7 @@ export default function HomeScreen({ navigation }: Props) {
           style={[s.tabItem, activeTab === 'profile' && s.tabItemActive]}
           onPress={() => setActiveTab('profile')}
           activeOpacity={0.8}>
-          <MaterialCommunityIcons
-            name={activeTab === 'profile' ? 'account' : 'account-outline'}
-            size={24}
-            color={activeTab === 'profile' ? '#2563EB' : '#94A3B8'}
-          />
+          <IconProfile size={20} color={activeTab === 'profile' ? '#2563EB' : '#94A3B8'} />
           <Text style={[s.tabLabel, activeTab === 'profile' && s.tabLabelActive]}>Profile</Text>
         </TouchableOpacity>
 
@@ -741,11 +736,7 @@ export default function HomeScreen({ navigation }: Props) {
           style={[s.tabItem, activeTab === 'more' && s.tabItemActive]}
           onPress={() => setActiveTab('more')}
           activeOpacity={0.8}>
-          <MaterialCommunityIcons
-            name={activeTab === 'more' ? 'dots-horizontal-circle' : 'dots-horizontal-circle-outline'}
-            size={24}
-            color={activeTab === 'more' ? '#2563EB' : '#94A3B8'}
-          />
+          <IconMore size={20} color={activeTab === 'more' ? '#2563EB' : '#94A3B8'} />
           <Text style={[s.tabLabel, activeTab === 'more' && s.tabLabelActive]}>More</Text>
         </TouchableOpacity>
       </View>
@@ -796,7 +787,7 @@ const s = StyleSheet.create({
   adminPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     backgroundColor: '#FFF7ED',
     borderWidth: 1,
     borderColor: '#FED7AA',
@@ -1135,6 +1126,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  stepCircleCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   timelineLine: { width: 2, flex: 1, backgroundColor: '#CBD5E1', marginVertical: 4 },
 
   timelineCardIn: {
@@ -1246,6 +1238,7 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
+  profileVerifiedCheck: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
   profileName: { fontFamily: fonts.bold, fontSize: 20, color: '#0F172A' },
   profileRole: { fontFamily: fonts.regular, fontSize: 13, color: '#64748B', marginTop: 2 },
   profileIdBadge: {
@@ -1339,6 +1332,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  adminBannerArrowText: { color: '#EA580C', fontSize: 14, fontWeight: '900' },
 
   moreSectionTitle: {
     fontFamily: fonts.bold,
@@ -1360,8 +1354,16 @@ const s = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.lg,
   },
+  moreMenuDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2563EB',
+    marginRight: spacing.md,
+  },
   moreMenuBorder: { borderTopWidth: 1, borderTopColor: '#F1F5F9' },
   moreMenuLabel: { fontFamily: fonts.semiBold, fontSize: 14, color: '#0F172A', flex: 1 },
+  moreMenuArrow: { fontSize: 20, color: '#CBD5E1' },
 
   /* ── Bottom Navigation Tab Bar ───────────────────────────────── */
   bottomTabBar: {
@@ -1386,6 +1388,6 @@ const s = StyleSheet.create({
     paddingVertical: 6,
   },
   tabItemActive: {},
-  tabLabel: { fontFamily: fonts.medium, fontSize: 11, color: '#94A3B8', marginTop: 2 },
+  tabLabel: { fontFamily: fonts.medium, fontSize: 11, color: '#94A3B8', marginTop: 3 },
   tabLabelActive: { fontFamily: fonts.bold, color: '#2563EB' },
 });
