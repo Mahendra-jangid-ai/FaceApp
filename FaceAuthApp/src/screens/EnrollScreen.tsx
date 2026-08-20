@@ -320,8 +320,8 @@ export default function EnrollScreen({ navigation, route }: Props) {
 
         {[
           { label: 'Full Name *', val: name, set: setName, ph: 'e.g. Rajesh Kumar' },
-          { label: 'Employee ID *', val: employeeId, set: setEmployeeId, ph: 'e.g. NHAI-2024-001' },
-          { label: 'Department / Section', val: department, set: setDepartment, ph: 'e.g. Highway Division 4' },
+          { label: 'Employee ID *', val: employeeId, set: setEmployeeId, ph: 'e.g. EMP-2024-001' },
+          { label: 'Department / Section', val: department, set: setDepartment, ph: 'e.g. Operations Division 4' },
         ].map((f, i) => (
           <View key={i} style={s.fieldGroup}>
             <Text style={s.fieldLabel}>{f.label}</Text>

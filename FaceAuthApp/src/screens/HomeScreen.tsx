@@ -72,15 +72,15 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={s.logoRow}>
             <View style={s.logoBadge}>
               <Image
-                source={require('../assets/nhai_logo.png')}
+                source={require('../assets/faceauth_logo.png')}
                 style={s.logoImg}
                 resizeMode="contain"
               />
             </View>
             <View>
               <View style={s.brandRow}>
-                <Text style={s.brand}>NHAI </Text>
-                <Text style={s.brandAccent}>FaceAuth</Text>
+                <Text style={s.brand}>Face</Text>
+                <Text style={s.brandAccent}>Auth</Text>
               </View>
               <Text style={s.brandSub}>Biometric Attendance System</Text>
             </View>
@@ -178,7 +178,7 @@ export default function HomeScreen({ navigation }: Props) {
 
         {/* System & Privacy Badges */}
         <View style={s.infoCard}>
-          <Text style={s.infoLabel}>Protected by NHAI Security Architecture</Text>
+          <Text style={s.infoLabel}>Protected by Enterprise Security Architecture</Text>
           <View style={s.tagRow}>
             {[
               { t: 'Offline Face Engine' },

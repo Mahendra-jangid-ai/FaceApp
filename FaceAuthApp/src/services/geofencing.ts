@@ -76,7 +76,7 @@ export async function requestLocationPermission(): Promise<boolean> {
       PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       {
         title: 'Location Permission Required',
-        message: 'NHAI FaceAuth needs your location to verify you are at your assigned work site.',
+        message: 'FaceAuth needs your location to verify you are at your assigned work site.',
         buttonPositive: 'Allow',
         buttonNegative: 'Deny',
       },

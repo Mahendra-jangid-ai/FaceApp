@@ -266,7 +266,7 @@ export default function SettingsScreen() {
             style={st.urlInput}
             value={config.serverUrl}
             onChangeText={v => { setConfig({ ...config, serverUrl: v }); updateSyncConfig({ serverUrl: v }); }}
-            placeholder="https://nhai.gov.in/api/v3/sync"
+            placeholder="https://api.faceauth.app/v3/sync"
             placeholderTextColor={colors.textFaint}
             autoCapitalize="none"
           />
@@ -356,7 +356,7 @@ export default function SettingsScreen() {
       {/* About */}
       <View style={st.section}>
         <View style={st.aboutCard}>
-          <Text style={st.aboutTitle}>NHAI FaceAuth v3.0</Text>
+          <Text style={st.aboutTitle}>FaceAuth v3.0</Text>
           <Text style={st.aboutText}>Offline Face Recognition • ISO/IEC 24745 BioHash • AES-256 GCM</Text>
           <Text style={st.aboutText}>MobileFaceNet INT8 (1.15 MB) • 99.28% LFW Benchmark</Text>
         </View>
