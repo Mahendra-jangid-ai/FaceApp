@@ -19,6 +19,15 @@ export async function saveUser(user: EnrolledUser): Promise<void> {
   await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
+export async function updateUser(id: string, update: Partial<EnrolledUser>): Promise<void> {
+  const users = await getEnrolledUsers();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx >= 0) {
+    users[idx] = { ...users[idx], ...update };
+    await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+}
+
 export async function deleteUser(id: string): Promise<void> {
   const users = await getEnrolledUsers();
   const filtered = users.filter(u => u.id !== id);

@@ -14,6 +14,7 @@ export interface EnrolledUser {
   bioHash?: string;
   bioHashSalt?: string;
   photoUri: string;
+  profilePhotoUrl?: string | null; // Cloudinary DP URL
   createdAt: number;
   synced: boolean;
   role: 'admin' | 'worker';

@@ -8,7 +8,10 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { spacing, fonts } from '../theme';
@@ -16,8 +19,10 @@ import {
   getEnrolledUsers,
   getAuthLogs,
   getTodayAttendance,
+  updateUser,
 } from '../services/database';
 import { isOnline } from '../services/syncService';
+import { uploadUserDP } from '../services/uploadService';
 import { getSession } from '../auth/sessionStore';
 import {
   IconAttendance,
@@ -62,6 +67,10 @@ export default function HomeScreen({ navigation }: Props) {
   const [onSiteCount, setOnSiteCount] = useState(0);
   const [online, setOnline] = useState(false);
 
+  // Current logged-in user (first enrolled user for now)
+  const [currentUser, setCurrentUser] = useState<EnrolledUser | null>(null);
+  const [dpUploading, setDpUploading] = useState(false);
+
   // Live timer effect
   useEffect(() => {
     const updateTime = () => {
@@ -94,6 +103,9 @@ export default function HomeScreen({ navigation }: Props) {
     setAuthLogs(logs);
     setOnSiteCount(attendance.filter(a => a.checkOutTime === null).length);
     setOnline(netStatus);
+    // Set current user — first enrolled user (worker role)
+    const worker = users.find(u => u.role === 'worker') || users[0] || null;
+    setCurrentUser(worker);
   };
 
   useFocusEffect(
@@ -109,6 +121,42 @@ export default function HomeScreen({ navigation }: Props) {
     } else {
       navigation.navigate('AdminLogin');
     }
+  };
+
+  const handleProfileDPUpload = () => {
+    if (!currentUser) {
+      Alert.alert('No Profile', 'No enrolled user found. Please enroll first.');
+      return;
+    }
+    launchImageLibrary(
+      { mediaType: 'photo', quality: 0.85 as any, selectionLimit: 1 },
+      async response => {
+        if (response.didCancel || !response.assets?.length) return;
+        const asset = response.assets[0];
+        if (!asset.uri) return;
+
+        setDpUploading(true);
+        try {
+          const result = await uploadUserDP(
+            currentUser.id,
+            asset.uri,
+            asset.type ?? 'image/jpeg',
+            asset.fileName ?? 'photo.jpg',
+          );
+          if (result.success && result.profilePhotoUrl) {
+            await updateUser(currentUser.id, { profilePhotoUrl: result.profilePhotoUrl });
+            await loadAllData();
+            Alert.alert('Done', 'Profile photo updated successfully!');
+          } else {
+            Alert.alert('Upload Failed', result.message || 'Make sure backend server is running.');
+          }
+        } catch (e: any) {
+          Alert.alert('Error', e.message || 'Upload failed');
+        } finally {
+          setDpUploading(false);
+        }
+      },
+    );
   };
 
   const getGreeting = () => {
@@ -502,21 +550,42 @@ export default function HomeScreen({ navigation }: Props) {
     <ScrollView style={s.tabScroll} showsVerticalScrollIndicator={false}>
       {/* Profile Card Header */}
       <View style={s.profileHeaderCard}>
-        <View style={s.profileAvatarWrap}>
-          <Image
-            source={require('../assets/faceauth_logo.png')}
-            style={s.profileAvatarImg}
-            resizeMode="cover"
-          />
+        <TouchableOpacity
+          style={s.profileAvatarWrap}
+          onPress={handleProfileDPUpload}
+          activeOpacity={0.8}
+          disabled={dpUploading}>
+          {currentUser?.profilePhotoUrl ? (
+            <Image
+              source={{ uri: currentUser.profilePhotoUrl }}
+              style={s.profileAvatarImg}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image
+              source={require('../assets/faceauth_logo.png')}
+              style={s.profileAvatarImg}
+              resizeMode="cover"
+            />
+          )}
+          {dpUploading ? (
+            <View style={s.profileAvatarOverlay}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            </View>
+          ) : (
+            <View style={s.profileCameraBadge}>
+              <Text style={s.profileCameraIcon}>📷</Text>
+            </View>
+          )}
           <View style={s.profileVerifiedBadge}>
             <Text style={s.profileVerifiedCheck}>✓</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <Text style={s.profileName}>Mahendra Kumar</Text>
+        <Text style={s.profileName}>{currentUser?.name || 'No User Enrolled'}</Text>
         <Text style={s.profileRole}>Field Engineer & Biometrics</Text>
         <View style={s.profileIdBadge}>
-          <Text style={s.profileIdText}>EMP-1114</Text>
+          <Text style={s.profileIdText}>{currentUser?.employeeId || '—'}</Text>
         </View>
 
         {/* 2-Column Summary Pill Cards */}
@@ -662,7 +731,7 @@ export default function HomeScreen({ navigation }: Props) {
           />
           <View>
             <Text style={s.headerGreeting}>{getGreeting()}</Text>
-            <Text style={s.headerUserName}>Mahendra Kumar</Text>
+            <Text style={s.headerUserName}>{currentUser?.name || 'Welcome'}</Text>
           </View>
         </View>
 
@@ -1249,7 +1318,20 @@ const s = StyleSheet.create({
     borderColor: LINE,
   },
   profileAvatarWrap: { position: 'relative', marginBottom: spacing.sm },
-  profileAvatarImg: { width: 84, height: 84, borderRadius: 12 },
+  profileAvatarImg: { width: 84, height: 84, borderRadius: 42, borderWidth: 2, borderColor: CLAY },
+  profileAvatarOverlay: {
+    position: 'absolute',
+    width: 84, height: 84, borderRadius: 42,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  profileCameraBadge: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: CLAY, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: CARD,
+  },
+  profileCameraIcon: { fontSize: 11 },
   profileVerifiedBadge: {
     position: 'absolute',
     bottom: 2,
