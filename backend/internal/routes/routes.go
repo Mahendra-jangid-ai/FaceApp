@@ -38,6 +38,8 @@ func SetupRouter() *gin.Engine {
 		{
 			orgs.POST("", handlers.CreateOrganization)
 			orgs.GET("", handlers.GetOrganizations)
+			orgs.POST("/set-password", handlers.SetOrgPassword)
+			orgs.POST("/login", handlers.OrgLogin)
 		}
 
 		// Protected routes
