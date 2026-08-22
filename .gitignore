@@ -48,3 +48,8 @@ Thumbs.db
 !docs/nhai_logo.png
 !FaceAuthApp/artifacts/*.onnx
 !FaceAuthApp/artifacts/*.pt
+.env
+/backend/.env
+backend/.env
+.env/
+/.env

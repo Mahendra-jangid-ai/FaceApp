@@ -4,50 +4,57 @@ import (
 	"net/http"
 	"strings"
 
+	"faceapp/backend/internal/config"
+	"faceapp/backend/internal/utils"
+
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-func AuthRequired(jwtSecret string) gin.HandlerFunc {
+// AuthRequired validates the Bearer JWT and sets uid + role in context.
+func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		header := c.GetHeader("Authorization")
+		if header == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
+		parts := strings.SplitN(header, " ", 2)
+		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format, expected: Bearer <token>"})
 			return
 		}
 
-		tokenStr := parts[1]
-		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-			return []byte(jwtSecret), nil
-		})
-
-		if err != nil || !token.Valid {
+		claims, err := utils.ParseToken(cfg, parts[1])
+		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
-			return
-		}
-
-		c.Set("userID", claims["user_id"])
-		c.Set("role", claims["role"])
+		// Inject validated claims into context
+		c.Set("uid", claims.UserID)
+		c.Set("role", claims.Role)
 		c.Next()
 	}
 }
 
+// OrgAdminRequired allows only org_admin role (must run after AuthRequired).
+func OrgAdminRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, _ := c.Get("role")
+		if role != "org_admin" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Organization admin access required"})
+			return
+		}
+		c.Next()
+	}
+}
+
+// AdminRequired allows only admin role (must run after AuthRequired).
 func AdminRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		if !exists || role != "admin" {
+		role, _ := c.Get("role")
+		if role != "admin" {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 			return
 		}

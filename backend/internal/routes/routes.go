@@ -1,53 +1,64 @@
 package routes
 
 import (
-	"os"
-
+	"faceapp/backend/internal/config"
 	"faceapp/backend/internal/handlers"
 	"faceapp/backend/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter() *gin.Engine {
-	r := gin.Default()
-
-	// Global middleware
-	r.Use(middleware.CORSMiddleware())
-
-	// Health check
-	r.GET("/health", handlers.HealthCheck)
-
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "change-me-in-production"
+func SetupRouter(cfg *config.Config) *gin.Engine {
+	if cfg.Env == "production" {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// API v1
+	r := gin.New()
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
+
+	// ── Global middleware ────────────────────────────────────────────
+	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.CORSMiddleware(cfg))
+
+	// ── Health (no auth, no rate-limit) ─────────────────────────────
+	r.GET("/health", handlers.HealthCheck)
+
+	// ── API v1 ──────────────────────────────────────────────────────
 	v1 := r.Group("/api/v1")
+
+	// ── PUBLIC: Auth ─────────────────────────────────────────────────
+	// Rate-limited: 10 req/min per IP by default
+	auth := v1.Group("/auth")
+	auth.Use(middleware.RateLimit(cfg.RateLimitRPM))
 	{
-		// Auth routes (public)
-		auth := v1.Group("/auth")
-		{
-			auth.POST("/register", handlers.Register)
-			auth.POST("/login", handlers.Login)
-		}
+		auth.POST("/register", handlers.Register(cfg))
+		auth.POST("/login", handlers.Login(cfg))
+	}
 
-		// Organization routes (public — app setup ke time)
-		orgs := v1.Group("/organizations")
-		{
-			orgs.POST("", handlers.CreateOrganization)
-			orgs.GET("", handlers.GetOrganizations)
-			orgs.POST("/set-password", handlers.SetOrgPassword)
-			orgs.POST("/login", handlers.OrgLogin)
-		}
+	// ── PUBLIC: Organization onboarding & login ───────────────────────
+	orgPublic := v1.Group("/organizations")
+	orgPublic.Use(middleware.RateLimit(cfg.RateLimitRPM))
+	{
+		orgPublic.POST("", handlers.CreateOrganization)           // Sign up
+		orgPublic.POST("/set-password", handlers.SetOrgPassword(cfg)) // One-time password set
+		orgPublic.POST("/login", handlers.OrgLogin(cfg))          // Login
+	}
 
-		// Protected routes
-		protected := v1.Group("/")
-		protected.Use(middleware.AuthRequired(jwtSecret))
-		{
-			_ = protected // future protected routes yahan aayenge
-		}
+	// ── PROTECTED: Org admin routes (JWT required, org_admin role) ───
+	orgAdmin := v1.Group("/organizations")
+	orgAdmin.Use(middleware.AuthRequired(cfg))
+	orgAdmin.Use(middleware.OrgAdminRequired())
+	{
+		orgAdmin.GET("/me", handlers.GetOrganizations) // Own org profile
+	}
+
+	// ── PROTECTED: Generic user routes ────────────────────────────────
+	user := v1.Group("/")
+	user.Use(middleware.AuthRequired(cfg))
+	{
+		// Future user-scoped routes here
+		_ = user
 	}
 
 	return r

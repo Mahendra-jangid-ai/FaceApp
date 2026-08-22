@@ -7,6 +7,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import OrgAuthScreen from './screens/OrgAuthScreen';
 import OrganizationAdminScreen from './screens/OrganizationAdminScreen';
 import AddOrganizationScreen from './screens/AddOrganizationScreen';
+import SetPasswordScreen from './screens/SetPasswordScreen';
 import HomeScreen from './screens/HomeScreen';
 import EnrollScreen from './screens/EnrollScreen';
 import AuthScreen from './screens/AuthScreen';
@@ -146,6 +147,7 @@ export default function App() {
           <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrganizationAdmin" component={OrganizationAdminScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AddOrganization" component={AddOrganizationScreen} options={{ title: 'Add Organization' }} />
+          <Stack.Screen name="SetPassword" component={SetPasswordScreen} options={{ title: 'Set Password', headerBackVisible: false }} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Enroll" component={EnrollScreen} options={{ title: 'Worker Enrolment' }} />
           <Stack.Screen name="Authenticate" component={AuthScreen} options={{ title: 'Face Scan Verification' }} />

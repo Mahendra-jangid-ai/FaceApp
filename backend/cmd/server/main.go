@@ -12,27 +12,28 @@ import (
 )
 
 func main() {
-	// Load config from .env
 	cfg := config.Load()
 
-	// Connect to MongoDB
+	// Hard-fail if JWT secret is missing or still default
+	if cfg.JWTSecret == "" || cfg.JWTSecret == "change-me-in-production" {
+		log.Fatal("FATAL: JWT_SECRET is not set or is using the default value. Set a strong secret in .env")
+	}
+
 	database.Connect(cfg)
 	defer database.Disconnect()
 
-	// Setup router
-	r := routes.SetupRouter()
+	r := routes.SetupRouter(cfg)
 
-	// Graceful shutdown on Ctrl+C
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Server starting on port %s", cfg.Port)
+		log.Printf("[FaceApp] Server starting on port %s (env: %s)", cfg.Port, cfg.Env)
 		if err := r.Run(":" + cfg.Port); err != nil {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
 
 	<-quit
-	log.Println("Shutting down server...")
+	log.Println("[FaceApp] Shutting down gracefully...")
 }

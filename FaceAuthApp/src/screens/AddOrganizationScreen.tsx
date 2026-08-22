@@ -64,9 +64,6 @@ interface Form {
   city: string;
   state: string;
   pincode: string;
-  // Legal
-  gst_number: string;
-  pan_number: string;
   // Contact person
   contact_person: string;
   contact_role: string;
@@ -78,7 +75,6 @@ const EMPTY: Form = {
   name: '', email: '', phone: '', alternate_phone: '', website: '',
   industry: '', organization_type: '', worker_range: '',
   address: '', city: '', state: '', pincode: '',
-  gst_number: '', pan_number: '',
   contact_person: '', contact_role: '',
 };
 
@@ -133,18 +129,11 @@ export default function AddOrganizationScreen({ navigation }: Props) {
         state:             form.state,
         pincode:           form.pincode.trim(),
         country:           'India',
-        gst_number:        form.gst_number.trim() || undefined,
-        pan_number:        form.pan_number.trim() || undefined,
         contact_person:    form.contact_person.trim(),
         contact_role:      form.contact_role,
       });
-      Alert.alert('Success 🎉', `"${res.organization.name}" registered successfully!`, [
-        {
-          text: 'Go to Dashboard',
-          onPress: () =>
-            navigation.reset({ index: 0, routes: [{ name: 'OrganizationAdmin' }] }),
-        },
-      ]);
+      // Navigate to SetPassword — pass org name
+      navigation.replace('SetPassword', { orgName: res.organization.name });
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? 'Something went wrong. Please try again.');
     } finally {
@@ -260,24 +249,6 @@ export default function AddOrganizationScreen({ navigation }: Props) {
             error={errors.state}
             placeholder="Select State"
           />
-
-          {/* ═══════════════════════════════════════════════════
-              SECTION 4 — Legal Details (Optional)
-          ═══════════════════════════════════════════════════ */}
-          <SectionHeader title="Legal Details (Optional)" icon="📄" />
-
-          <View style={s.row}>
-            <View style={s.halfWrap}>
-              <Field label="GST Number" placeholder="22AAAAA0000A1Z5"
-                value={form.gst_number} onChangeText={v => set('gst_number', v.toUpperCase())}
-                autoCapitalize="characters" />
-            </View>
-            <View style={s.halfWrap}>
-              <Field label="PAN Number" placeholder="ABCDE1234F"
-                value={form.pan_number} onChangeText={v => set('pan_number', v.toUpperCase())}
-                autoCapitalize="characters" />
-            </View>
-          </View>
 
           {/* ═══════════════════════════════════════════════════
               SECTION 5 — Primary Contact Person

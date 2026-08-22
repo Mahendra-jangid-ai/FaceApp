@@ -124,8 +124,6 @@ export interface Organization {
   state: string;
   pincode: string;
   country: string;
-  gst_number?: string;
-  pan_number?: string;
   contact_person: string;
   contact_role: string;
   logo?: string;
@@ -139,6 +137,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   OrganizationAdmin: undefined;
   AddOrganization: undefined;
+  SetPassword: { orgName: string };
   Home: undefined;
   Enroll: { role?: 'admin' | 'worker'; returnTo?: string } | undefined;
   Authenticate: undefined;
