@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors, typography, spacing, borderRadius, shadows, MONO } from './theme';
 import OnboardingScreen from './screens/OnboardingScreen';
+import OrgAuthScreen from './screens/OrgAuthScreen';
 import OrganizationAdminScreen from './screens/OrganizationAdminScreen';
 import AddOrganizationScreen from './screens/AddOrganizationScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -80,7 +81,22 @@ const eb = StyleSheet.create({
 });
 
 export default function App() {
+  const [initialRoute, setInitialRoute] =
+    React.useState<'OrgAuth' | 'OrganizationAdmin'>('OrgAuth');
+  const [ready, setReady] = React.useState(false);
+
   useEffect(() => {
+    // On startup: check if any organization exists → decide initial screen
+    const { getOrganizations } = require('./services/api');
+    getOrganizations()
+      .then((res: any) => {
+        setInitialRoute(
+          res?.organizations?.length > 0 ? 'OrganizationAdmin' : 'OrgAuth',
+        );
+      })
+      .catch(() => setInitialRoute('OrgAuth'))
+      .finally(() => setReady(true));
+
     try {
       const { startWatching } = require('./services/connectivityWatcher');
       startWatching();
@@ -97,12 +113,26 @@ export default function App() {
     } catch {}
   }, []);
 
+  // Splash screen while checking DB
+  if (!ready) {
+    return (
+      <View style={splash.root}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={splash.logoBox}>
+          <Text style={splash.logoText}>FA</Text>
+        </View>
+        <Text style={splash.appName}>FaceApp</Text>
+        <Text style={splash.loading}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Onboarding"
+          initialRouteName={initialRoute}
           screenOptions={{
             headerStyle: { backgroundColor: '#FFFFFF' },
             headerTintColor: colors.accent,
@@ -112,6 +142,7 @@ export default function App() {
             animation: 'slide_from_right',
             contentStyle: { backgroundColor: colors.bg },
           }}>
+          <Stack.Screen name="OrgAuth" component={OrgAuthScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
           <Stack.Screen name="OrganizationAdmin" component={OrganizationAdminScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AddOrganization" component={AddOrganizationScreen} options={{ title: 'Add Organization' }} />
@@ -137,3 +168,27 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
+const splash = StyleSheet.create({
+  root: {
+    flex: 1, backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  logoBox: {
+    width: 72, height: 72, borderRadius: 20,
+    backgroundColor: '#1B4F72',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+  },
+  logoText: {
+    fontFamily: 'Poppins-Bold', fontSize: 28,
+    color: '#FFFFFF', letterSpacing: 1,
+  },
+  appName: {
+    fontFamily: 'Poppins-SemiBold', fontSize: 22, color: '#1B4F72',
+  },
+  loading: {
+    fontFamily: 'Poppins-Regular', fontSize: 13,
+    color: '#5B6570', marginTop: 8,
+  },
+});

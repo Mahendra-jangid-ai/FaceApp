@@ -191,7 +191,7 @@ export default function OrganizationAdminScreen({ navigation }: Props) {
           { icon: '🔒', label: 'Admin Login',       onPress: () => navigation.navigate('AdminLogin') },
           { icon: '⚙️', label: 'System Settings',   onPress: () => navigation.navigate('Settings') },
           { icon: '🔐', label: 'Admin Dashboard',   onPress: () => navigation.navigate('AdminDashboard') },
-          { icon: '🏠', label: 'Back to Role Selection', onPress: () => navigation.navigate('Onboarding') },
+          { icon: '🏠', label: 'Back to Login', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'OrgAuth' }] }) },
         ].map((item, i) => (
           <TouchableOpacity
             key={i}
@@ -236,12 +236,22 @@ export default function OrganizationAdminScreen({ navigation }: Props) {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={s.addOrgBtn}
-            onPress={() => navigation.navigate('AddOrganization')}
-            activeOpacity={0.8}>
-            <Text style={s.addOrgText}>+ Org</Text>
-          </TouchableOpacity>
+          <View style={s.headerRight}>
+            <TouchableOpacity
+              style={s.addOrgBtn}
+              onPress={() => navigation.navigate('AddOrganization')}
+              activeOpacity={0.8}>
+              <Text style={s.addOrgText}>+ Org</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.logoutBtn}
+              onPress={() =>
+                navigation.reset({ index: 0, routes: [{ name: 'OrgAuth' }] })
+              }
+              activeOpacity={0.8}>
+              <Text style={s.logoutText}>⏻</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
 
@@ -283,8 +293,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm, paddingBottom: spacing.md,
-  },
-  backBtn: {
+  },  backBtn: {
     width: 36, height: 36, borderRadius: 10,
     backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.line,
     alignItems: 'center', justifyContent: 'center',
@@ -293,11 +302,19 @@ const s = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontFamily: fonts.bold, fontSize: 17, color: colors.text },
   headerSub: { fontFamily: fonts.regular, fontSize: 11.5, color: colors.textDim, marginTop: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   addOrgBtn: {
     backgroundColor: colors.primary, paddingHorizontal: spacing.md,
     paddingVertical: 7, borderRadius: 9, ...shadows.sm,
   },
   addOrgText: { fontFamily: fonts.semiBold, fontSize: 12.5, color: '#FFFFFF' },
+  logoutBtn: {
+    width: 34, height: 34, borderRadius: 9,
+    backgroundColor: colors.dangerDim,
+    borderWidth: 1, borderColor: colors.danger,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  logoutText: { fontSize: 16, color: colors.danger },
 
   /* Body */
   body: { flex: 1 },

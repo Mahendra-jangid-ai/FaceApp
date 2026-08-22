@@ -114,7 +114,20 @@ export interface Organization {
   name: string;
   email: string;
   phone: string;
+  alternate_phone?: string;
+  website?: string;
+  industry: string;
+  organization_type: string;
+  worker_range: string;
   address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  gst_number?: string;
+  pan_number?: string;
+  contact_person: string;
+  contact_role: string;
   logo?: string;
   is_active: boolean;
   created_at: string;
@@ -122,6 +135,7 @@ export interface Organization {
 }
 
 export type RootStackParamList = {
+  OrgAuth: undefined;
   Onboarding: undefined;
   OrganizationAdmin: undefined;
   AddOrganization: undefined;

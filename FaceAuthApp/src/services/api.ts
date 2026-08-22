@@ -55,7 +55,20 @@ export interface CreateOrgPayload {
   name: string;
   email: string;
   phone: string;
+  alternate_phone?: string;
+  website?: string;
+  industry: string;
+  organization_type: string;
+  worker_range: string;
   address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country?: string;
+  gst_number?: string;
+  pan_number?: string;
+  contact_person: string;
+  contact_role: string;
 }
 
 export async function createOrganization(
