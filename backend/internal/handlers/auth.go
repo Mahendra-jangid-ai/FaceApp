@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"faceapp/backend/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,6 +32,18 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	col := database.GetCollection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Check if email already exists
+	var existing models.User
+	err := col.FindOne(ctx, bson.M{"email": req.Email}).Decode(&existing)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		return
+	}
+
 	// Hash password
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -37,23 +51,30 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	now := time.Now()
 	user := models.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: string(hashed),
+		ID:        bson.NewObjectID(),
+		Name:      req.Name,
+		Email:     req.Email,
+		Password:  string(hashed),
+		Role:      "user",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	if result := database.GetDB().Create(&user); result.Error != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+	if _, err := col.InsertOne(ctx, user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
 		"user": gin.H{
-			"id":    user.ID,
+			"id":    user.ID.Hex(),
 			"name":  user.Name,
 			"email": user.Email,
+			"role":  user.Role,
 		},
 	})
 }
@@ -65,8 +86,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	col := database.GetCollection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	var user models.User
-	if result := database.GetDB().Where("email = ?", req.Email).First(&user); result.Error != nil {
+	if err := col.FindOne(ctx, bson.M{"email": req.Email}).Decode(&user); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -76,7 +101,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.ID, user.Role)
+	token, err := utils.GenerateJWT(user.ID.Hex(), user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -86,7 +111,7 @@ func Login(c *gin.Context) {
 		"token":      token,
 		"expires_at": time.Now().Add(24 * time.Hour).UTC(),
 		"user": gin.H{
-			"id":    user.ID,
+			"id":    user.ID.Hex(),
 			"name":  user.Name,
 			"email": user.Email,
 			"role":  user.Role,

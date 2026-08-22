@@ -1,0 +1,23 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Go build cache
+/vendor/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

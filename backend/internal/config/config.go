@@ -8,14 +8,11 @@ import (
 )
 
 type Config struct {
-	Port     string
-	DBHost   string
-	DBPort   string
-	DBUser   string
-	DBPass   string
-	DBName   string
+	Port      string
+	MongoURI  string
+	DBName    string
 	JWTSecret string
-	Env      string
+	Env       string
 }
 
 func Load() *Config {
@@ -26,10 +23,7 @@ func Load() *Config {
 
 	return &Config{
 		Port:      getEnv("PORT", "8080"),
-		DBHost:    getEnv("DB_HOST", "localhost"),
-		DBPort:    getEnv("DB_PORT", "5432"),
-		DBUser:    getEnv("DB_USER", "postgres"),
-		DBPass:    getEnv("DB_PASS", ""),
+		MongoURI:  getEnv("MONGO_URI", "mongodb://localhost:27017"),
 		DBName:    getEnv("DB_NAME", "faceapp"),
 		JWTSecret: getEnv("JWT_SECRET", "change-me-in-production"),
 		Env:       getEnv("ENV", "development"),

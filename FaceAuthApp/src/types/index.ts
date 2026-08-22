@@ -109,7 +109,21 @@ export interface AdminConfig {
   dataRetentionDays: number;
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  logo?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export type RootStackParamList = {
+  Onboarding: undefined;
+  AddOrganization: undefined;
   Home: undefined;
   Enroll: { role?: 'admin' | 'worker'; returnTo?: string } | undefined;
   Authenticate: undefined;

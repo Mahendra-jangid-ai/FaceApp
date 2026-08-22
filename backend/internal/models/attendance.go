@@ -1,15 +1,19 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
 
 type Attendance struct {
-	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	UserID    uint      `json:"user_id" gorm:"not null;index"`
-	User      User      `json:"user" gorm:"foreignKey:UserID"`
-	CheckIn   time.Time `json:"check_in"`
-	CheckOut  *time.Time `json:"check_out"`
-	Date      string    `json:"date" gorm:"not null;index"` // format: YYYY-MM-DD
-	Status    string    `json:"status" gorm:"default:present"` // present, absent, late
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        bson.ObjectID  `json:"id" bson:"_id,omitempty"`
+	UserID    bson.ObjectID  `json:"user_id" bson:"user_id"`
+	UserName  string         `json:"user_name" bson:"user_name"`
+	CheckIn   time.Time      `json:"check_in" bson:"check_in"`
+	CheckOut  *time.Time     `json:"check_out" bson:"check_out,omitempty"`
+	Date      string         `json:"date" bson:"date"`     // format: YYYY-MM-DD
+	Status    string         `json:"status" bson:"status"` // present, absent, late
+	CreatedAt time.Time      `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at" bson:"updated_at"`
 }

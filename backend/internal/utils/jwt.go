@@ -8,12 +8,12 @@ import (
 )
 
 type Claims struct {
-	UserID uint   `json:"user_id"`
+	UserID string `json:"user_id"`
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID uint, role string) (string, error) {
+func GenerateJWT(userID string, role string) (string, error) {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		secret = "change-me-in-production"

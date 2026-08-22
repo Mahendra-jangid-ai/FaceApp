@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors, typography, spacing, borderRadius, shadows, MONO } from './theme';
+import OnboardingScreen from './screens/OnboardingScreen';
+import AddOrganizationScreen from './screens/AddOrganizationScreen';
 import HomeScreen from './screens/HomeScreen';
 import EnrollScreen from './screens/EnrollScreen';
 import AuthScreen from './screens/AuthScreen';
@@ -99,7 +101,7 @@ export default function App() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Home"
+          initialRouteName="Onboarding"
           screenOptions={{
             headerStyle: { backgroundColor: '#FFFFFF' },
             headerTintColor: colors.accent,
@@ -109,6 +111,8 @@ export default function App() {
             animation: 'slide_from_right',
             contentStyle: { backgroundColor: colors.bg },
           }}>
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AddOrganization" component={AddOrganizationScreen} options={{ title: 'Add Organization' }} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Enroll" component={EnrollScreen} options={{ title: 'Worker Enrolment' }} />
           <Stack.Screen name="Authenticate" component={AuthScreen} options={{ title: 'Face Scan Verification' }} />

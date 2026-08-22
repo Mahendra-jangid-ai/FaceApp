@@ -33,13 +33,18 @@ func SetupRouter() *gin.Engine {
 			auth.POST("/login", handlers.Login)
 		}
 
+		// Organization routes (public — app setup ke time)
+		orgs := v1.Group("/organizations")
+		{
+			orgs.POST("", handlers.CreateOrganization)
+			orgs.GET("", handlers.GetOrganizations)
+		}
+
 		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthRequired(jwtSecret))
 		{
-			// Add protected routes here
-			// e.g., protected.GET("/profile", handlers.GetProfile)
-			_ = protected // suppress unused warning until routes are added
+			_ = protected // future protected routes yahan aayenge
 		}
 	}
 
