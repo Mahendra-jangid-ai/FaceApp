@@ -6,95 +6,107 @@ import {
   TouchableOpacity,
   StatusBar,
   SafeAreaView,
-  Image,
+  Dimensions,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
-import { colors, typography, spacing, borderRadius, shadows } from '../theme';
+import { colors, typography, spacing, borderRadius, shadows, fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
+const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen({ navigation }: Props) {
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={s.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoText}>FA</Text>
+      {/* ── Logo & App Name ─────────────────────────────────── */}
+      <View style={s.header}>
+        <View style={s.logoBox}>
+          <Text style={s.logoText}>FA</Text>
         </View>
-        <Text style={styles.appName}>FaceApp</Text>
-        <Text style={styles.tagline}>
-          Secure face-based attendance management
-        </Text>
+        <Text style={s.appName}>FaceApp</Text>
+        <Text style={s.tagline}>Secure face-based attendance management</Text>
       </View>
 
-      {/* Cards */}
-      <View style={styles.body}>
-        <Text style={styles.sectionLabel}>GET STARTED</Text>
-        <Text style={styles.title}>What do you want to set up?</Text>
+      {/* ── Divider ─────────────────────────────────────────── */}
+      <View style={s.dividerRow}>
+        <View style={s.divider} />
+        <Text style={s.dividerText}>CHOOSE YOUR ROLE</Text>
+        <View style={s.divider} />
+      </View>
 
-        {/* Organization Card */}
+      {/* ── Cards ────────────────────────────────────────────── */}
+      <View style={s.cardsWrap}>
+
+        {/* Organization / Admin Card */}
         <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('AddOrganization')}>
-          <View style={[styles.iconWrap, { backgroundColor: colors.primaryDim }]}>
-            <Text style={styles.cardIcon}>🏢</Text>
+          style={s.card}
+          activeOpacity={0.88}
+          onPress={() => navigation.navigate('OrganizationAdmin')}>
+          <View style={[s.cardIconBox, { backgroundColor: '#EEF3F7' }]}>
+            <Text style={s.cardEmoji}>🏢</Text>
           </View>
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>Organization</Text>
-            <Text style={styles.cardDesc}>
-              Register your company or institution to manage attendance
+          <View style={s.cardBody}>
+            <Text style={s.cardTitle}>Organization</Text>
+            <Text style={s.cardRole}>Admin Portal</Text>
+            <Text style={s.cardDesc}>
+              Manage your organization, enroll workers, view analytics and control attendance
             </Text>
           </View>
-          <Text style={styles.arrow}>›</Text>
+          <View style={s.cardArrowBox}>
+            <Text style={s.cardArrow}>›</Text>
+          </View>
         </TouchableOpacity>
 
-        {/* User Card */}
+        {/* User / Worker Card */}
         <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.85}
+          style={[s.card, s.cardUser]}
+          activeOpacity={0.88}
           onPress={() => navigation.navigate('Home')}>
-          <View style={[styles.iconWrap, { backgroundColor: colors.successDim }]}>
-            <Text style={styles.cardIcon}>👤</Text>
+          <View style={[s.cardIconBox, { backgroundColor: '#F0F5F2' }]}>
+            <Text style={s.cardEmoji}>👤</Text>
           </View>
-          <View style={styles.cardText}>
-            <Text style={styles.cardTitle}>User</Text>
-            <Text style={styles.cardDesc}>
-              Enroll or authenticate workers using face recognition
+          <View style={s.cardBody}>
+            <Text style={s.cardTitle}>User</Text>
+            <Text style={[s.cardRole, { color: colors.success }]}>Worker Portal</Text>
+            <Text style={s.cardDesc}>
+              Mark attendance, check your schedule and view personal records
             </Text>
           </View>
-          <Text style={styles.arrow}>›</Text>
+          <View style={s.cardArrowBox}>
+            <Text style={s.cardArrow}>›</Text>
+          </View>
         </TouchableOpacity>
+
       </View>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Powered by on-device face recognition
-        </Text>
+      {/* ── Footer ───────────────────────────────────────────── */}
+      <View style={s.footer}>
+        <View style={s.footerDot} />
+        <Text style={s.footerText}>Powered by on-device face recognition</Text>
+        <View style={s.footerDot} />
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg,
   },
+
+  /* Header */
   header: {
     alignItems: 'center',
-    paddingTop: spacing.xxxl,
+    paddingTop: spacing.xxxl + spacing.lg,
     paddingBottom: spacing.xxl,
-    paddingHorizontal: spacing.xl,
   },
   logoBox: {
-    width: 72,
-    height: 72,
-    borderRadius: borderRadius.xl,
+    width: 76,
+    height: 76,
+    borderRadius: 20,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -102,83 +114,129 @@ const styles = StyleSheet.create({
     ...shadows.glowPrimary,
   },
   logoText: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 26,
-    color: colors.onAccent,
+    fontFamily: fonts.bold,
+    fontSize: 28,
+    color: '#FFFFFF',
     letterSpacing: 1,
   },
   appName: {
-    ...typography.h1,
+    fontFamily: fonts.bold,
+    fontSize: 28,
     color: colors.primary,
-    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   tagline: {
-    ...typography.bodySmall,
+    fontFamily: fonts.regular,
+    fontSize: 13,
     color: colors.textDim,
+    marginTop: spacing.xs,
     textAlign: 'center',
     paddingHorizontal: spacing.xxl,
   },
-  body: {
+
+  /* Divider */
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xl,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.line,
+  },
+  dividerText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.textFaint,
+    letterSpacing: 1.4,
+    marginHorizontal: spacing.md,
+  },
+
+  /* Cards */
+  cardsWrap: {
     flex: 1,
     paddingHorizontal: spacing.xl,
-  },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.primary,
-    letterSpacing: 1.2,
-    marginBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.text,
-    marginBottom: spacing.xl,
+    gap: spacing.lg,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 1.5,
+    borderColor: colors.primaryDim,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
     ...shadows.md,
   },
-  iconWrap: {
-    width: 52,
-    height: 52,
+  cardUser: {
+    borderColor: colors.successDim,
+  },
+  cardIconBox: {
+    width: 58,
+    height: 58,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.lg,
   },
-  cardIcon: {
-    fontSize: 24,
+  cardEmoji: {
+    fontSize: 26,
   },
-  cardText: {
+  cardBody: {
     flex: 1,
   },
   cardTitle: {
-    ...typography.h3,
+    fontFamily: fonts.bold,
+    fontSize: 17,
     color: colors.text,
-    marginBottom: 2,
+  },
+  cardRole: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.primary,
+    marginTop: 1,
+    marginBottom: spacing.xs,
   },
   cardDesc: {
-    ...typography.bodySmall,
+    fontFamily: fonts.regular,
+    fontSize: 12,
     color: colors.textDim,
     lineHeight: 17,
   },
-  arrow: {
-    fontSize: 24,
-    color: colors.textFaint,
+  cardArrowBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: spacing.sm,
   },
+  cardArrow: {
+    fontSize: 20,
+    color: colors.textDim,
+    lineHeight: 24,
+  },
+
+  /* Footer */
   footer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.xl,
+    gap: spacing.sm,
+  },
+  footerDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.line,
   },
   footerText: {
-    ...typography.caption,
+    fontFamily: fonts.regular,
+    fontSize: 11.5,
     color: colors.textFaint,
   },
 });

@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { colors, typography, spacing, borderRadius, shadows, MONO } from './theme';
 import OnboardingScreen from './screens/OnboardingScreen';
+import OrganizationAdminScreen from './screens/OrganizationAdminScreen';
 import AddOrganizationScreen from './screens/AddOrganizationScreen';
 import HomeScreen from './screens/HomeScreen';
 import EnrollScreen from './screens/EnrollScreen';
@@ -112,6 +113,7 @@ export default function App() {
             contentStyle: { backgroundColor: colors.bg },
           }}>
           <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="OrganizationAdmin" component={OrganizationAdminScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AddOrganization" component={AddOrganizationScreen} options={{ title: 'Add Organization' }} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Enroll" component={EnrollScreen} options={{ title: 'Worker Enrolment' }} />

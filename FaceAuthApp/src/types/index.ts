@@ -123,6 +123,7 @@ export interface Organization {
 
 export type RootStackParamList = {
   Onboarding: undefined;
+  OrganizationAdmin: undefined;
   AddOrganization: undefined;
   Home: undefined;
   Enroll: { role?: 'admin' | 'worker'; returnTo?: string } | undefined;

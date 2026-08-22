@@ -11,88 +11,71 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../types';
 import { createOrganization } from '../services/api';
-import { colors, typography, spacing, borderRadius, shadows } from '../theme';
+import { colors, fonts, spacing, borderRadius, shadows } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddOrganization'>;
 
-interface FormState {
+interface Form {
   name: string;
   email: string;
   phone: string;
   address: string;
 }
 
-interface FieldError {
+interface Errors {
   name?: string;
   email?: string;
   phone?: string;
   address?: string;
 }
 
-function validate(form: FormState): FieldError {
-  const errors: FieldError = {};
-  if (!form.name.trim()) errors.name = 'Organization name is required';
-  if (!form.email.trim()) {
-    errors.email = 'Email is required';
-  } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-    errors.email = 'Enter a valid email address';
-  }
-  if (!form.phone.trim()) {
-    errors.phone = 'Phone number is required';
-  } else if (!/^\+?[\d\s\-]{8,15}$/.test(form.phone)) {
-    errors.phone = 'Enter a valid phone number';
-  }
-  if (!form.address.trim()) errors.address = 'Address is required';
-  return errors;
+function validate(f: Form): Errors {
+  const e: Errors = {};
+  if (!f.name.trim())    e.name    = 'Organization name is required';
+  if (!f.email.trim())   e.email   = 'Email is required';
+  else if (!/\S+@\S+\.\S+/.test(f.email)) e.email = 'Enter a valid email';
+  if (!f.phone.trim())   e.phone   = 'Phone number is required';
+  if (!f.address.trim()) e.address = 'Address is required';
+  return e;
 }
 
 export default function AddOrganizationScreen({ navigation }: Props) {
-  const [form, setForm] = useState<FormState>({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-  });
-  const [errors, setErrors] = useState<FieldError>({});
+  const [form, setForm] = useState<Form>({ name: '', email: '', phone: '', address: '' });
+  const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
 
-  function update(field: keyof FormState, value: string) {
-    setForm(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
+  function set(field: keyof Form, value: string) {
+    setForm(p => ({ ...p, [field]: value }));
+    if (errors[field]) setErrors(p => ({ ...p, [field]: undefined }));
   }
 
-  async function handleSubmit() {
-    const fieldErrors = validate(form);
-    if (Object.keys(fieldErrors).length > 0) {
-      setErrors(fieldErrors);
-      return;
-    }
+  async function submit() {
+    const e = validate(form);
+    if (Object.keys(e).length > 0) { setErrors(e); return; }
 
     setLoading(true);
     try {
       const res = await createOrganization({
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        phone: form.phone.trim(),
+        name:    form.name.trim(),
+        email:   form.email.trim().toLowerCase(),
+        phone:   form.phone.trim(),
         address: form.address.trim(),
       });
-
-      Alert.alert(
-        'Success',
-        `"${res.organization.name}" has been registered successfully.`,
-        [
-          {
-            text: 'Go to Home',
-            onPress: () => navigation.navigate('Home'),
-          },
-        ],
-      );
+      Alert.alert('Success', `"${res.organization.name}" registered successfully.`, [
+        {
+          text: 'Continue',
+          onPress: () =>
+            navigation.reset({
+              index: 1,
+              routes: [{ name: 'Onboarding' }, { name: 'OrganizationAdmin' }],
+            }),
+        },
+      ]);
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? 'Something went wrong. Please try again.');
     } finally {
@@ -101,34 +84,31 @@ export default function AddOrganizationScreen({ navigation }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <SafeAreaView style={s.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.bg} />
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={s.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={s.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
 
-        {/* Top Banner */}
-        <View style={styles.banner}>
-          <View style={styles.iconWrap}>
-            <Text style={styles.bannerIcon}>🏢</Text>
+          {/* Header */}
+          <View style={s.header}>
+            <View style={s.iconBox}>
+              <Text style={s.icon}>🏢</Text>
+            </View>
+            <Text style={s.title}>Register Organization</Text>
+            <Text style={s.subtitle}>Fill in your organization details below</Text>
           </View>
-          <Text style={styles.bannerTitle}>Add Organization</Text>
-          <Text style={styles.bannerSub}>
-            Fill in your organization details. This info will be used across the app.
-          </Text>
-        </View>
 
-        {/* Form */}
-        <View style={styles.form}>
+          {/* Form Fields */}
           <Field
             label="Organization Name"
             placeholder="e.g. NHAI, Tata Consultancy"
             value={form.name}
-            onChangeText={v => update('name', v)}
+            onChangeText={v => set('name', v)}
             error={errors.name}
             autoCapitalize="words"
           />
@@ -136,7 +116,7 @@ export default function AddOrganizationScreen({ navigation }: Props) {
             label="Email Address"
             placeholder="contact@organization.com"
             value={form.email}
-            onChangeText={v => update('email', v)}
+            onChangeText={v => set('email', v)}
             error={errors.email}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -145,7 +125,7 @@ export default function AddOrganizationScreen({ navigation }: Props) {
             label="Phone Number"
             placeholder="+91 98765 43210"
             value={form.phone}
-            onChangeText={v => update('phone', v)}
+            onChangeText={v => set('phone', v)}
             error={errors.phone}
             keyboardType="phone-pad"
           />
@@ -153,41 +133,30 @@ export default function AddOrganizationScreen({ navigation }: Props) {
             label="Address"
             placeholder="Full address of the organization"
             value={form.address}
-            onChangeText={v => update('address', v)}
+            onChangeText={v => set('address', v)}
             error={errors.address}
             multiline
-            numberOfLines={3}
           />
-        </View>
 
-        {/* Submit */}
-        <TouchableOpacity
-          style={[styles.btn, loading && styles.btnDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-          activeOpacity={0.85}>
-          {loading ? (
-            <ActivityIndicator color={colors.onAccent} size="small" />
-          ) : (
-            <Text style={styles.btnText}>Register Organization</Text>
-          )}
-        </TouchableOpacity>
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={[s.btn, loading && s.btnDisabled]}
+            onPress={submit}
+            disabled={loading}
+            activeOpacity={0.85}>
+            {loading
+              ? <ActivityIndicator color="#FFFFFF" size="small" />
+              : <Text style={s.btnText}>Register Organization</Text>
+            }
+          </TouchableOpacity>
 
-        {/* Back link */}
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}>
-          <Text style={styles.backText}>← Back to selection</Text>
-        </TouchableOpacity>
-
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-// ─── Reusable Field Component ─────────────────────────────────────────────────
-
+/* ── Reusable Field ──────────────────────────────────────────────────────────── */
 interface FieldProps {
   label: string;
   placeholder: string;
@@ -197,29 +166,15 @@ interface FieldProps {
   keyboardType?: 'default' | 'email-address' | 'phone-pad';
   autoCapitalize?: 'none' | 'words' | 'sentences';
   multiline?: boolean;
-  numberOfLines?: number;
 }
 
-function Field({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  error,
-  keyboardType = 'default',
-  autoCapitalize = 'sentences',
-  multiline = false,
-  numberOfLines = 1,
-}: FieldProps) {
+function Field({ label, placeholder, value, onChangeText, error,
+  keyboardType = 'default', autoCapitalize = 'sentences', multiline = false }: FieldProps) {
   return (
-    <View style={field.wrap}>
-      <Text style={field.label}>{label}</Text>
+    <View style={f.wrap}>
+      <Text style={f.label}>{label}</Text>
       <TextInput
-        style={[
-          field.input,
-          multiline && field.multiline,
-          error ? field.inputError : null,
-        ]}
+        style={[f.input, multiline && f.multiline, error ? f.inputErr : null]}
         placeholder={placeholder}
         placeholderTextColor={colors.textFaint}
         value={value}
@@ -227,51 +182,40 @@ function Field({
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         multiline={multiline}
-        numberOfLines={numberOfLines}
         textAlignVertical={multiline ? 'top' : 'center'}
       />
-      {error ? <Text style={field.error}>{error}</Text> : null}
+      {error ? <Text style={f.err}>{error}</Text> : null}
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
+/* ── Styles ──────────────────────────────────────────────────────────────────── */
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  flex: { flex: 1 },
   scroll: {
     paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xxxl,
   },
-  banner: {
+  header: {
     alignItems: 'center',
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
-  iconWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: borderRadius.xl,
+  iconBox: {
+    width: 72, height: 72, borderRadius: 20,
     backgroundColor: colors.primaryDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-    ...shadows.sm,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: spacing.lg, ...shadows.sm,
   },
-  bannerIcon: { fontSize: 30 },
-  bannerTitle: {
-    ...typography.h2,
-    color: colors.primary,
-    marginBottom: spacing.xs,
+  icon: { fontSize: 32 },
+  title: {
+    fontFamily: fonts.bold, fontSize: 22,
+    color: colors.primary, marginBottom: spacing.xs,
   },
-  bannerSub: {
-    ...typography.bodySmall,
-    color: colors.textDim,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  form: {
-    marginTop: spacing.sm,
+  subtitle: {
+    fontFamily: fonts.regular, fontSize: 13,
+    color: colors.textDim, textAlign: 'center',
   },
   btn: {
     backgroundColor: colors.primary,
@@ -281,56 +225,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     ...shadows.glowPrimary,
   },
-  btnDisabled: {
-    opacity: 0.7,
-  },
-  btnText: {
-    ...typography.button,
-    color: colors.onAccent,
-    fontSize: 15,
-  },
-  backBtn: {
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  backText: {
-    ...typography.bodySmall,
-    color: colors.primary,
-  },
+  btnDisabled: { opacity: 0.65 },
+  btnText: { fontFamily: fonts.semiBold, fontSize: 15, color: '#FFFFFF' },
 });
 
-const field = StyleSheet.create({
+const f = StyleSheet.create({
   wrap: { marginBottom: spacing.lg },
   label: {
-    ...typography.caption,
-    color: colors.text,
-    marginBottom: spacing.xs,
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12.5,
+    fontFamily: fonts.medium, fontSize: 12.5,
+    color: colors.text, marginBottom: spacing.xs,
   },
   input: {
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 1, borderColor: colors.line,
     borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    ...typography.body,
-    color: colors.text,
-    backgroundColor: colors.surfaceAlt,
-    fontSize: 14,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
+    fontFamily: fonts.regular, fontSize: 14,
+    color: colors.text, backgroundColor: colors.surfaceAlt,
   },
-  multiline: {
-    minHeight: 90,
-    paddingTop: spacing.md,
-  },
-  inputError: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerDim,
-  },
-  error: {
-    ...typography.caption,
-    color: colors.danger,
-    marginTop: 4,
-  },
+  multiline: { minHeight: 90, paddingTop: spacing.md },
+  inputErr: { borderColor: colors.danger, backgroundColor: colors.dangerDim },
+  err: { fontFamily: fonts.regular, fontSize: 12, color: colors.danger, marginTop: 4 },
 });
